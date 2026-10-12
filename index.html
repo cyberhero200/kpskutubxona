@@ -2079,6 +2079,11 @@ const UZ = {
   "Add “{q}” as a new book": "“{q}”ni yangi kitob sifatida qo‘shish",
   "Enter the title of the book.": "Kitob nomini kiriting.",
   "ISBN (optional)": "ISBN (ixtiyoriy)",
+  "Code written in the book": "Kitobdagi kod (varaqdagi raqam)",
+  "Apply": "Qo‘llash",
+  "This copy will be numbered “{code}” when the book is issued.": "Kitob berilganda bu nusxaga “{code}” raqami yoziladi.",
+  "Type the code written in the book to pick exactly that copy.": "Kitobning varag‘idagi kodni yozing: aynan shu nusxa tanlanadi.",
+  "Every copy of this book already has its own code, and none of them is “{code}”.": "Bu kitobning hamma nusxasiga kod yozilgan va ularning orasida “{code}” yo‘q.",
   "Numbers on the copies": "Nusxalardagi raqamlar",
   "Copy {n}": "{n}-nusxa",
   "Add more copies (separate the numbers with commas)": "Yangi nusxalar qo‘shish (raqamlarni vergul bilan ajrating)",
@@ -2954,6 +2959,11 @@ const RU = {
   "Add “{q}” as a new book": "Добавить «{q}» как новую книгу",
   "Enter the title of the book.": "Введите название книги.",
   "ISBN (optional)": "ISBN (необязательно)",
+  "Code written in the book": "Код в книге (номер на странице)",
+  "Apply": "Применить",
+  "This copy will be numbered “{code}” when the book is issued.": "При выдаче этому экземпляру будет присвоен номер «{code}».",
+  "Type the code written in the book to pick exactly that copy.": "Введите код из книги, чтобы выбрать именно этот экземпляр.",
+  "Every copy of this book already has its own code, and none of them is “{code}”.": "У всех экземпляров этой книги уже есть свои коды, и «{code}» среди них нет.",
   "Numbers on the copies": "Номера на экземплярах",
   "Copy {n}": "Экземпляр {n}",
   "Add more copies (separate the numbers with commas)": "Добавить экземпляры (номера через запятую)",
@@ -4460,6 +4470,33 @@ function coSyncDates() {
   $$('#co-due-chips .chip').forEach((c) => c.setAttribute('aria-pressed', String(Number(c.dataset.days) === n)));
   const daysEl = $('#co-days'); if (document.activeElement !== daysEl) daysEl.value = n === null ? '' : n;
 }
+/** The code printed inside the book: a known code picks that copy, a new one is written onto an unlabelled copy when the book is issued. */
+const AUTO_NO = /^K\d+-\d+$/i;
+function coPrintBox(c) {
+  const pend = co.pending && co.pending.id === c.id ? co.pending.code : '';
+  return `<div class="print-code" style="margin-top:14px"><label class="field-label" for="co-print">${t('Code written in the book')}</label>
+    <div class="actions" style="margin:0"><input class="ctl" id="co-print" autocomplete="off" spellcheck="false" maxlength="40" placeholder="kps-01" value="${esc(co.printed || pend)}" style="font-family:var(--font-mono);max-width:280px"><button type="button" class="btn small" id="co-print-ok">${t('Apply')}</button></div>
+    <p class="field-msg" id="co-print-msg" role="status">${pend ? t('This copy will be numbered “{code}” when the book is issued.', { code: esc(pend) }) : t('Type the code written in the book to pick exactly that copy.')}</p></div>`;
+}
+function coPrintApply() {
+  const inp = $('#co-print'), msg = $('#co-print-msg'), c = co.copy;
+  if (!inp || !c || c.isNew) return;
+  const v = inp.value.replace(/\s+/g, ' ').trim(), say = (text, kind) => { msg.textContent = text; msg.dataset.kind = kind || ''; };
+  if (!v) return say(t('Type the code written in the book to pick exactly that copy.'));
+  co.printed = v;
+  const mine = ix().ofBook.get(c.bookId) || [], k = codeKey(v), same = mine.find((x) => codeKey(x.barcode) === k);
+  if (same) {
+    const problem = same.id === c.id ? null : copyProblem(same, co.student);
+    if (problem) return say(problem, 'error');
+    co.pending = null; co.printed = ''; co.copy = same; coRender(); return coFocusNext();
+  }
+  const clash = copyByBarcode(v);
+  if (clash) return say(t('Number {n} is already used by “{title}”.', { n: clash.barcode, title: bookById(clash.bookId).title }), 'error');
+  const target = AUTO_NO.test(c.barcode) ? c : mine.find((x) => x.status === 'AVAILABLE' && AUTO_NO.test(x.barcode) && !copyProblem(x, co.student));
+  if (!target) return say(t('Every copy of this book already has its own code, and none of them is “{code}”.', { code: v }), 'error');
+  co.copy = target; co.pending = { id: target.id, code: v }; co.printed = ''; coRender(); coFocusNext();
+}
+
 function coRender() {
   const s = co.student, c = co.copy;
   // step 1
@@ -4471,7 +4508,8 @@ function coRender() {
   $('#co-copy-combo').hidden = !!c || !!co.adding;
   $('#co-copy-picked').hidden = !c; $('#co-newbook').hidden = !co.adding;
   $('#co-step-copy').classList.toggle('done', !!c);
-  if (c) { const b = bookOf(c); $('#co-copy-picked').innerHTML = `<div class="picked">${miniCover(b, true)}<div class="picked-main"><div class="picked-name">${esc(b.title)}</div>${origTitle(b)}<div class="picked-sub">${authorDot(b)}${c.barcode ? `<span class="mono">${esc(c.barcode)}</span>` : t('Number given automatically')}${shelfDot(c)}</div><div class="badges">${c.isNew ? `<span class="pill ink">${c.draftBook ? t('New book, added when issued') : t('New copy of a book already in the list')}</span>` : `<span class="pill ok">${t('Available')}</span><span class="pill off">${t('Last recorded: {c}', { c: COND[c.condition] })}</span>`}</div></div><button type="button" class="btn small" id="co-copy-change">${t('Change')}</button></div>`; }
+  if (!c || (co.pending && co.pending.id !== c.id)) co.pending = null;
+  if (c) { const b = bookOf(c); $('#co-copy-picked').innerHTML = `<div class="picked">${miniCover(b, true)}<div class="picked-main"><div class="picked-name">${esc(b.title)}</div>${origTitle(b)}<div class="picked-sub">${authorDot(b)}${c.barcode ? `<span class="mono">${esc(c.barcode)}</span>` : t('Number given automatically')}${shelfDot(c)}</div><div class="badges">${c.isNew ? `<span class="pill ink">${c.draftBook ? t('New book, added when issued') : t('New copy of a book already in the list')}</span>` : `<span class="pill ok">${t('Available')}</span><span class="pill off">${t('Last recorded: {c}', { c: COND[c.condition] })}</span>`}</div></div><button type="button" class="btn small" id="co-copy-change">${t('Change')}</button></div>${c.isNew ? '' : coPrintBox(c)}`; }
   coEls.copy.placeholder = s ? t('Number or title of the book for {name}', { name: s.name.split(' ')[0] }) : t('Type the number on the book, or its title');
   $('#co-step-details').classList.toggle('done', !!(s && c));
   coSyncDates();
@@ -4518,7 +4556,7 @@ function coFocusNext() {
   coEls.submit.focus();
 }
 function coReset(keepStudent) {
-  co.copy = null; co.adding = false; co.issuedEdit = false; co.dueManual = false; co.override = false;
+  co.copy = null; co.pending = null; co.printed = ''; co.adding = false; co.issuedEdit = false; co.dueManual = false; co.override = false;
   if (!keepStudent) co.student = null;
   coEls.issued.readOnly = true; $('#co-issued-edit').textContent = t('Edit');
   $('#co-issued-hint').textContent = t('Now. Changing it needs override permission.');
@@ -4553,6 +4591,13 @@ $('#co-form').addEventListener('submit', (e) => {
     reason = $('#co-reason').value.trim();
     if (reason.length < 5) { const m = $('#co-reason-msg'); m.textContent = t('Give a short reason, at least 5 characters.'); m.dataset.kind = 'error'; $('#co-reason').setAttribute('aria-invalid', 'true'); return $('#co-reason').focus(); }
   }
+  if (co.pending && !co.copy.isNew && co.pending.id === co.copy.id) {
+    const dup = copyByBarcode(co.pending.code);
+    if (dup && dup.id !== co.copy.id) { co.pending = null; coRender(); return coCopyCombo.setMsg(t('Number {n} is already used by “{title}”.', { n: dup.barcode, title: bookById(dup.bookId).title }), 'error'); }
+    record('copy', `${bookById(co.copy.bookId).enTitle} [${co.copy.barcode}]`, `number: ${co.copy.barcode} → ${co.pending.code}`.slice(0, 200));
+    co.copy.barcode = co.pending.code; dataGen++; touch();
+  }
+  co.pending = null; co.printed = '';
   const student = registerPerson(co.student), copy = registerCopy(co.copy), book = bookById(copy.bookId);
   const pointsBefore = student.id ? readingScore(student).points : 0;
   const loan = doCheckout({ student, copy, issuedAt, dueDate: due, condition: $('input[name="co-cond"]:checked').value, overrideReason: reason });
@@ -4562,9 +4607,11 @@ $('#co-form').addEventListener('submit', (e) => {
   addLog(t('Issued {book} to {name}, due {date}', { book: `<strong>${esc(book.title)}</strong> <span class="mono">${esc(copy.barcode)}</span>`, name: esc(student.name), date: fmtDate(loan.dueDate) }) + (reason ? ' ' + t('(override)') : ''));
   save(); coReset(true); renderAll();
 });
+$('#co-form').addEventListener('keydown', (e) => { if (e.target.id === 'co-print' && e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); coPrintApply(); } });
 $('#co-form').addEventListener('click', (e) => {
+  if (e.target.id === 'co-print-ok') coPrintApply();
   if (e.target.id === 'co-student-change') { co.student = null; co.override = false; coRender(); coEls.student.focus(); }
-  if (e.target.id === 'co-copy-change') { co.copy = null; coRender(); coEls.copy.focus(); }
+  if (e.target.id === 'co-copy-change') { co.copy = null; co.printed = ''; coRender(); coEls.copy.focus(); }
   if (e.target.id === 'co-clear') { $('#co-result').innerHTML = ''; coReset(false); }
   const chip = e.target.closest('#co-due-chips .chip');
   if (chip) { const n = Number(chip.dataset.days); coEls.due.value = addDays(isoOf(coIssuedAt()), n); co.dueManual = n !== coBaseDays(); coSyncDates(); }
