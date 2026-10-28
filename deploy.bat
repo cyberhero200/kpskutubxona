@@ -1,5 +1,5 @@
 @echo off
-rem Mutolaxona saytini Netlify ga joylash. Node.js o`rnatilgan bo`lishi kerak: https://nodejs.org
+rem Mutolaaxona saytini Netlify ga joylash. Node.js o`rnatilgan bo`lishi kerak: https://nodejs.org
 cd /d "%~dp0"
 call npm install
 if errorlevel 1 goto fail

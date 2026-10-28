@@ -1,10 +1,10 @@
-# Mutolaxona sayti
+# Mutolaaxona sayti
 
 Bu papka saytning o‘zi. Netlify’ga to‘g‘ri joylansa, kutubxonachi qilgan har bir o‘zgarish hamma qurilmada ko‘rinadi.
 
 ```
 index.html                      sahifa (o‘quvchilar va kutubxonachi paneli)
-netlify/functions/library.mjs   server qismi: umumiy baza va parolni tekshirish
+netlify/functions/library.mjs   server qismi: umumiy baza, parolni tekshirish, PDF havolalari
 404.html, _redirects            xato sahifasi va yopiq fayllar ro‘yxati
 netlify.toml, package.json      Netlify o‘qiydigan sozlamalar
 deploy.bat, deploy.sh           terminal orqali joylash (2-usul)
@@ -16,7 +16,7 @@ Papkani Netlify’ga **sudrab tashlash yetarli emas**. Shunda sahifa ochiladi, l
 
 ## 1-usul: GitHub orqali (terminal kerak emas)
 
-1. github.com → **New repository** → nom bering (masalan `mutolaxona`) → **Private** → **Create repository**.
+1. github.com → **New repository** → nom bering (masalan `mutolaaxona`) → **Private** → **Create repository**.
 2. Ochilgan sahifada **uploading an existing file** havolasini bosing.
 3. Shu papka **ichidagi** hamma narsani sudrab tashlang: `index.html`, `404.html`, `_redirects`, `netlify.toml`, `package.json`, `package-lock.json` va `netlify` papkasi. Papkaning o‘zini emas, ichidagilarni. **Commit changes** ni bosing.
 4. app.netlify.com → **Add new project** → **Import an existing project** → **GitHub** → shu repozitoriyni tanlang → **Deploy**. Sozlamalarga tegmang.
@@ -43,7 +43,7 @@ Ro‘yxatlar server qismining ichida turadi (`netlify/functions/library.mjs`), s
 
 ### O‘quvchilar kitobni o‘zi band qiladi (bron)
 
-1. **Kodlar.** Ro‘yxatdagi 168 o‘quvchi va 49 ustozning kodlari tayyor: ular `mutolaxona-kodlar.pdf` faylida (sinfma-sinf, kesib tarqatiladigan bo‘laklar) va server qismining ichida turadi, shuning uchun sayt joylangan zahoti ishlaydi. Keyin qo‘shilgan odamga kodni panel o‘zi beradi. Bo‘laklarni qayta chiqarish kerak bo‘lsa: **O‘quvchilar** bo‘limida sinfni tanlang va **Kodlarni chop etish** ni bosing.
+1. **Kodlar.** Ro‘yxatdagi 168 o‘quvchi va 49 ustozning kodlari tayyor: ular `mutolaaxona-kodlar.pdf` faylida (sinfma-sinf, kesib tarqatiladigan bo‘laklar) va server qismining ichida turadi, shuning uchun sayt joylangan zahoti ishlaydi. Keyin qo‘shilgan odamga kodni panel o‘zi beradi. Bo‘laklarni qayta chiqarish kerak bo‘lsa: **O‘quvchilar** bo‘limida sinfni tanlang va **Kodlarni chop etish** ni bosing.
 2. **O‘quvchi kiradi.** Saytda **Kirish** → kitobxon raqami va kod. Brauzer uni 90 kun eslab qoladi. `s146` yoki `146` deb yozsa ham tushunadi.
 3. **Band qilish.** Kitob yonidagi **Band qilish** tugmasi. Avval sayt **kitob necha kunga kerakligini** so‘raydi: 7, 14, 21, 30 kun yoki o‘zi yozgan son (1 dan 60 gacha). Kitob javonda bo‘lsa, darhol shu o‘quvchi uchun olib qo‘yiladi va 3 kun kutadi. Hammasi berilgan bo‘lsa, o‘quvchi navbatga yoziladi va kitob qaytishi bilan unga o‘tadi. **Kitoblarim** sahifasida qo‘lidagi kitoblari, bronlari va ballari turadi; so‘ralgan muddatni o‘sha yerda **Muddatni o‘zgartirish** tugmasi bilan almashtirsa bo‘ladi (navbatdagi o‘rni saqlanadi).
 4. **Kutubxonachi.** Yangi bron tushganda panelda xabar chiqadi va **Bronlar** bo‘limida (Alt+B) son paydo bo‘ladi. Kitobni bron javoniga qo‘ying. Har bir bron yonida o‘quvchi **so‘ragan muddat** yozilgan. O‘quvchi kelganda **Berish** ni bosing: ism ham, nusxa ham, so‘ralgan kunlar soni ham tayyor turadi, Enter bosilsa bo‘ldi. Muddatni kutubxonachi istagancha o‘zgartira oladi: oxirgi so‘z uniki.
@@ -144,6 +144,38 @@ Yangi fayllarni joylasangiz, bazadagi hech narsa o‘chmaydi: berilgan kitoblar,
 
 Parolni almashtirish: Netlify’da **Project configuration → Environment variables → Add a variable**, kalit `DESK_PASSCODE`, qiymat — yangi parol. Keyin **Deploys → Trigger deploy**.
 
+### PDF (elektron kitoblar)
+
+Kitobga PDF faylni kutubxonachi qo‘lda biriktiradi; saytga kirgan kitobxonlar uni o‘qiy oladi.
+
+**Qayerda turadi.** PDF fayllar **Supabase Storage**’da (yopiq ombor), qolgan hamma narsa (kitoblar, ballar, bronlar) avvalgidek Netlify’da. Supabase’ni ulash Netlify’dagi ma’lumotlarni **ko‘chirmaydi ham, o‘zgartirmaydi ham**: ular joyida qoladi.
+
+**Bir martalik sozlash:**
+
+1. supabase.com’da loyiha oching (yoki bor loyihani oling). Maslahat: kutubxona uchun **alohida loyiha** oching, chunki pastdagi “service” kalit shu loyihaning hamma narsasiga kira oladi.
+2. Loyihada **Project Settings → API** (yoki **API Keys**): **Project URL** va **secret / service_role** kalitni nusxalab oling.
+3. Netlify’da **Project configuration → Environment variables → Add a variable**:
+   - `SUPABASE_URL` — Project URL (masalan `https://abcd1234.supabase.co`)
+   - `SUPABASE_SERVICE_KEY` — secret / service_role kalit
+   
+   Bu kalitni hech qayerga, ayniqsa GitHub’ga yozmang. Faqat Netlify’da turadi, sahifaga hech qachon yuborilmaydi.
+4. **Deploys → Trigger deploy**.
+
+Ombor (`ebooks`) birinchi PDF yuklanganda o‘zi yaratiladi: yopiq, faqat PDF, bitta fayl 50 MB gacha.
+(Agar yuklashda Supabase “apikey” so‘rasa, qo‘shimcha `SUPABASE_PUBLISHABLE_KEY` (publishable / anon kalit) qo‘shing; odatda kerak emas.)
+
+**Kutubxonachi:** panel → **Kitoblar** → kitob nomini bosing → **PDF (elektron kitob) qo‘shish**. Fayl brauzerdan to‘g‘ridan-to‘g‘ri omborga yuboriladi (foizi ko‘rinib turadi). Keyin shu yerda **PDFni ochish**, **PDFni almashtirish** (eski fayl o‘chadi) va **PDFni olib tashlash** (ikki marta bosiladi) bor. Kitob nomi yonida **PDF** belgisi turadi. Har bir o‘zgarish **Faoliyat** jurnaliga yoziladi.
+Fayl faqat **ro‘yxatdagi kitobga** biriktiriladi: kitob avval **Kitob qo‘shish** orqali kiritilgan bo‘lishi kerak.
+
+**Kitobxon:** **Kitoblar** sahifasida PDF bor kitobda **PDF** belgisi va **PDF o‘qish** tugmasi chiqadi (kirmagan odamga “PDF o‘qish uchun kiring”). Yuqorida **Elektron kitoblar (PDF)** filtri bor. PDF yangi oynada ochiladi.
+
+Bilib qo‘ying:
+- PDFni faqat **kirgan kitobxonlar** va kutubxonachi ochadi. Ochish havolasi 10 daqiqa ishlaydi va har safar yangidan beriladi; omborning o‘zi yopiq.
+- To‘xtatilgan a’zo PDF o‘qiy olmaydi.
+- Brauzerning PDF ko‘rsatgichi “yuklab olish” tugmasiga ega: o‘qigan odam faylni saqlab olishi mumkin, buni to‘sib bo‘lmaydi. Faqat tarqatishga huquqingiz bor kitoblarni qo‘ying.
+- Supabase bepul tarifida jami 1 GB joy bor.
+- Zaxira fayli (**Ma’lumotlar → Zaxira faylini saqlash**) PDF fayllarning o‘zini emas, faqat qaysi kitobda PDF borligini saqlaydi.
+
 ## Bilib qo‘ying
 
 - **Kim o‘zgartira oladi.** Faqat parolni kiritgan qurilma. Parolni server tekshiradi, sahifa ichida parol ham, uning izi ham yo‘q.
@@ -153,4 +185,4 @@ Parolni almashtirish: Netlify’da **Project configuration → Environment varia
 - **Internet uzilsa**, panel o‘zgarishni ushlab turadi va qayta urinadi; tepada “Hali saqlanmadi” deb turadi.
 - **Zaxira.** **Ma’lumotlar → Zaxira faylini saqlash** hamma narsani faylga yuklab beradi. Server ham har kunning birinchi o‘zgarishidan oldingi holatni 30 kun saqlab turadi (`library` omborida `snap-YYYY-MM-DD`).
 - **Noto‘g‘ri parol.** Besh marta xato kiritilgach, o‘sha manzil 30 soniya kutadi.
-- Repozitoriy **Private** bo‘lsin: `netlify/functions/library.mjs` ichida o‘quvchilar va ustozlar ro‘yxati, ularning kodlari va kitoblar ro‘yxati bor. `mutolaxona-kodlar.pdf` ni ham faqat tarqatish uchun ishlating. Saytning o‘zidan bu faylni ochib bo‘lmaydi (`_redirects` yopadi).
+- Repozitoriy **Private** bo‘lsin: `netlify/functions/library.mjs` ichida o‘quvchilar va ustozlar ro‘yxati, ularning kodlari va kitoblar ro‘yxati bor. `mutolaaxona-kodlar.pdf` ni ham faqat tarqatish uchun ishlating. Saytning o‘zidan bu faylni ochib bo‘lmaydi (`_redirects` yopadi).

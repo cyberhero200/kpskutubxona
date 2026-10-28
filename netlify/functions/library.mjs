@@ -14,6 +14,7 @@
 //   POST /api/library/act            { op, … }        reader: ask for more days (renew / unrenew), set a monthly goal (goal), change
 //                                                     their own code (pin), change the days of a booking (holddays), like a post of the reading
 //                                                     feed (like) or stay out of the feed (feed); a teacher: set reading for classes (assign / unassign)
+//   GET  /api/library/ebook?id=12    signed-in    a short-lived link to the book's PDF;  POST (librarian) asks for an upload link, DELETE (librarian) removes a file
 //   GET  /api/library/cover?id=12    anyone           the cover picture of a book;  PUT (librarian) stores it, an empty PUT removes it
 //   PUT  /api/library/avatar         reader           stores a profile picture (a small JPEG) and answers { v }; the reader then makes it
 //                                                     theirs with POST /act { op: 'pic', v }.  PUT ?id=12 with an empty body (librarian) deletes
@@ -37,7 +38,7 @@ const WAIT_SECONDS = 30;              // kept short: a whole school often shares
 const PUBLIC_CACHE_SECONDS = 10;      // how long Netlify's CDN may reuse the public answer
 const READER_DAYS = 90;               // how long a reader stays signed in on a device
 const ZONE_HOURS = 5;                 // the school's clock: Asia/Samarkand, UTC+5, no daylight saving
-const SERVER_VER = 10;                 // raise with every change the page relies on: the desk warns when the page is newer than this file
+const SERVER_VER = 11;                 // raise with every change the page relies on: the desk warns when the page is newer than this file
 const JOURNAL = 1000;                 // how many recent steps are remembered for a desk that saves late (likes are steps too)
 const COVER_BYTES = 200_000;          // a cover picture is a small JPEG the page has already cut to size
 const AVATAR_BYTES = 80_000;          // a profile picture: 320 x 320, cut by the page
@@ -2259,11 +2260,74 @@ async function picsList(req, s) {
   return json({ rev: Number(d.picRev) || 0, pics }, 200, { 'cache-control': 'no-store' });
 }
 
+// ---- e-books (PDF). The files live in a PRIVATE Supabase Storage bucket, not in Netlify: a function may only take about 6 MB per request,
+// and a PDF is often bigger. The librarian's browser sends the file straight to Supabase through a one-time upload link this function
+// hands out; readers get a link that works for ten minutes, and only when they are signed in. The book remembers just book.ebook =
+// { v, name, size, at }; the file's name in the bucket is made from the book's number and v, never from anything the page sends.
+// Needs two settings in Netlify (Environment variables): SUPABASE_URL and SUPABASE_SERVICE_KEY (the secret key: it never reaches the page).
+const EBOOK_BUCKET = 'ebooks';
+const EBOOK_MB = 50;                                   // the free Supabase plan accepts up to 50 MB per file
+const ebookCfg = () => { const base = env('SUPABASE_URL').trim().replace(/\/+$/, ''), key = env('SUPABASE_SERVICE_KEY').trim(); return base && key ? { url: `${base}/storage/v1`, key } : null; };
+const ebookVer = (v) => typeof v === 'string' && /^[a-z0-9]{6,16}$/.test(v);
+const ebookPath = (id, v) => `book-${id}-${v}.pdf`;
+const ebookUrl = (cfg, link) => (/^https?:\/\//.test(link) ? link : `${cfg.url}${link.startsWith('/') ? '' : '/'}${link}`);
+let ebookBucketReady = false;
+async function sb(cfg, method, path, body) {
+  const res = await fetch(`${cfg.url}${path}`, { method, headers: { apikey: cfg.key, authorization: `Bearer ${cfg.key}`, ...(body ? { 'content-type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined });
+  let data = null; try { data = await res.json(); } catch (_) { /* some answers have no body */ }
+  return { ok: res.ok, status: res.status, data };
+}
+/** Makes the bucket the first time: private, PDF only, 50 MB at most. A bucket that already exists is what we want, too. */
+async function ebookBucket(cfg) {
+  if (ebookBucketReady) return true;
+  const r = await sb(cfg, 'POST', '/bucket', { id: EBOOK_BUCKET, name: EBOOK_BUCKET, public: false, file_size_limit: EBOOK_MB * 1024 * 1024, allowed_mime_types: ['application/pdf'] });
+  if (r.ok || r.status === 409 || (r.status === 400 && /exist/i.test(JSON.stringify(r.data)))) return (ebookBucketReady = true);
+  console.error('e-book bucket could not be made:', r.status, JSON.stringify(r.data));
+  return false;
+}
+async function ebook(req, url, s) {
+  const id = Number(url.searchParams.get('id'));
+  if (!Number.isInteger(id) || id < 1) return json({ error: 'bad' }, 400);
+  const cfg = ebookCfg();
+  if (!cfg) return json({ error: 'no-storage' }, 503);
+  if (req.method === 'GET') {   // a reader (or the desk) opens a book
+    const doc = withStart(await s.get('doc', { type: 'json' }));
+    if (!(await signedIn(req, s)) && !readerOf(req, doc.data, await secret(s))) return json({ error: 'auth' }, 401);
+    const b = doc.data.books.find((x) => x.id === id);
+    if (!b || !b.ebook || !ebookVer(b.ebook.v)) return json({ error: 'none' }, 404);
+    const r = await sb(cfg, 'POST', `/object/sign/${EBOOK_BUCKET}/${ebookPath(id, b.ebook.v)}`, { expiresIn: 600 });
+    const link = r.ok && r.data && (r.data.signedURL || r.data.signedUrl);
+    if (!link) return r.status === 404 || r.status === 400 ? json({ error: 'gone' }, 404) : json({ error: 'storage' }, 502);
+    return json({ url: ebookUrl(cfg, link) });
+  }
+  if (!(await signedIn(req, s))) return json({ error: 'auth' }, 401);
+  if (req.method === 'POST') {   // the desk wants to upload: hand out a one-time link for a new file
+    let body = null; try { body = await req.json(); } catch (_) { /* not JSON */ }
+    const size = Number(body && body.size);
+    if (!Number.isFinite(size) || size < 100 || size > EBOOK_MB * 1024 * 1024) return json({ error: 'size', max: EBOOK_MB }, 400);
+    if (!(await ebookBucket(cfg))) return json({ error: 'storage' }, 502);
+    const v = Date.now().toString(36) + randomBytes(2).toString('hex');
+    const r = await sb(cfg, 'POST', `/object/upload/sign/${EBOOK_BUCKET}/${ebookPath(id, v)}`, {});
+    const link = r.ok && r.data && r.data.url;
+    if (!link) { console.error('e-book upload link failed:', r.status, JSON.stringify(r.data)); return json({ error: 'storage' }, 502); }
+    const key = env('SUPABASE_PUBLISHABLE_KEY').trim();   // optional: a publishable key is meant to be public
+    return json({ v, upload: ebookUrl(cfg, link), ...(key ? { key } : {}) });
+  }
+  if (req.method === 'DELETE') {   // an old or removed file
+    const v = url.searchParams.get('v');
+    if (!ebookVer(v)) return json({ error: 'bad' }, 400);
+    const r = await sb(cfg, 'DELETE', `/object/${EBOOK_BUCKET}/${ebookPath(id, v)}`);
+    return r.ok || r.status === 404 ? json({ ok: true }) : json({ error: 'storage' }, 502);
+  }
+  return json({ error: 'method' }, 405);
+}
+
 export default async (req, context) => {
   try {
     const url = new URL(req.url), s = store();
     const post = (run) => (req.method === 'POST' ? run() : json({ error: 'method' }, 405));
     if (url.pathname.endsWith('/reader/login')) return await post(() => readerLogin(req, context, s));
+    if (url.pathname.endsWith('/ebook')) return await ebook(req, url, s);
     if (url.pathname.endsWith('/cover')) return await cover(req, url, s);
     if (url.pathname.endsWith('/avatar')) return await avatar(req, url, s);
     if (url.pathname.endsWith('/pics')) return await picsList(req, s);
@@ -2280,4 +2344,4 @@ export default async (req, context) => {
   }
 };
 
-export const config = { path: ['/api/library', '/api/library/login', '/api/library/reader/login', '/api/library/reserve', '/api/library/unreserve', '/api/library/act', '/api/library/cover', '/api/library/avatar', '/api/library/pics'] };
+export const config = { path: ['/api/library', '/api/library/login', '/api/library/reader/login', '/api/library/reserve', '/api/library/unreserve', '/api/library/act', '/api/library/cover', '/api/library/ebook', '/api/library/avatar', '/api/library/pics'] };

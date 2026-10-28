@@ -1104,6 +1104,11 @@ dialog#lock .gate h3 { margin-bottom: 0; }
 .khero h2 { color: #fff; }
 .khero p { color: #d3def3; }
 </style>
+<style id="ebook-css">
+.ebook-pill { background: color-mix(in srgb, #c2932f 20%, var(--surface)); color: var(--fg); border: 1px solid color-mix(in srgb, #c2932f 60%, transparent); font-weight: 700; letter-spacing: .04em; }
+.ebook-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.ebook-prog { font: 600 13px var(--font-ui); color: var(--accent); padding: 0 6px; }
+</style>
 </head>
 <body>
 <script>
@@ -2541,6 +2546,25 @@ const UZ = {
   "Open this list.": "Shu ro‘yxatni ochadi.",
   "A barcode scanner types the code and presses Enter, so a scan needs no extra key.": "Shtrix-kod skaneri kodni yozib, Enter ni o‘zi bosadi, shuning uchun qo‘shimcha tugma kerak emas.",
   "Close": "Yopish",
+  "PDF e-book changed": "PDF (elektron kitob) o‘zgardi",
+  "Add a PDF (e-book)": "PDF (elektron kitob) qo‘shish",
+  "Replace PDF": "PDFni almashtirish",
+  "Remove PDF": "PDFni olib tashlash",
+  "Open PDF": "PDFni ochish",
+  "Read PDF": "PDF o‘qish",
+  "Sign in to read the PDF": "PDF o‘qish uchun kiring",
+  "E-books (PDF)": "Elektron kitoblar (PDF)",
+  "Uploading… {n}%": "Yuklanmoqda… {n}%",
+  "PDF saved for “{title}”.": "“{title}” uchun PDF saqlandi.",
+  "PDF removed.": "PDF olib tashlandi.",
+  "That file is not a PDF.": "Bu fayl PDF emas.",
+  "The PDF is larger than {n} MB.": "PDF {n} MB dan katta.",
+  "The PDF could not be uploaded. Check the internet and try again.": "PDFni yuklab bo‘lmadi. Internetni tekshirib, qayta urinib ko‘ring.",
+  "PDF storage is not connected yet. See the setup steps in the README.": "PDF ombori hali ulanmagan. README’dagi sozlash qadamlarini bajaring.",
+  "The PDF could not be removed. Check the internet and try again.": "PDFni olib tashlab bo‘lmadi. Internetni tekshirib, qayta urinib ko‘ring.",
+  "Sign in again to read the PDF.": "PDF o‘qish uchun qaytadan kiring.",
+  "The PDF is no longer there. Ask the librarian.": "PDF endi yo‘q. Kutubxonachiga murojaat qiling.",
+  "The PDF could not be opened right now. Try again in a minute.": "PDFni hozir ochib bo‘lmadi. Bir ozdan keyin qayta urinib ko‘ring.",
   "PRESIDENTIAL SCHOOL · LIBRARY": "PREZIDENT MAKTABI · MUTOLAAXONA",
 };
 // Russian: counted nouns are short forms (дн., кн., экз.), because the page cannot change a word's ending after a number.
@@ -3422,6 +3446,25 @@ const RU = {
   "Open this list.": "Открыть этот список.",
   "A barcode scanner types the code and presses Enter, so a scan needs no extra key.": "Сканер штрихкодов вводит код и сам нажимает Enter, поэтому после сканирования ничего нажимать не нужно.",
   "Close": "Закрыть",
+  "PDF e-book changed": "PDF (электронная книга) изменён",
+  "Add a PDF (e-book)": "Добавить PDF (электронная книга)",
+  "Replace PDF": "Заменить PDF",
+  "Remove PDF": "Удалить PDF",
+  "Open PDF": "Открыть PDF",
+  "Read PDF": "Читать PDF",
+  "Sign in to read the PDF": "Войдите, чтобы читать PDF",
+  "E-books (PDF)": "Электронные книги (PDF)",
+  "Uploading… {n}%": "Загрузка… {n}%",
+  "PDF saved for “{title}”.": "PDF для «{title}» сохранён.",
+  "PDF removed.": "PDF удалён.",
+  "That file is not a PDF.": "Этот файл не PDF.",
+  "The PDF is larger than {n} MB.": "PDF больше {n} МБ.",
+  "The PDF could not be uploaded. Check the internet and try again.": "Не удалось загрузить PDF. Проверьте интернет и попробуйте снова.",
+  "PDF storage is not connected yet. See the setup steps in the README.": "Хранилище PDF ещё не подключено. Выполните шаги настройки из README.",
+  "The PDF could not be removed. Check the internet and try again.": "Не удалось удалить PDF. Проверьте интернет и попробуйте снова.",
+  "Sign in again to read the PDF.": "Войдите снова, чтобы читать PDF.",
+  "The PDF is no longer there. Ask the librarian.": "PDF больше нет. Обратитесь к библиотекарю.",
+  "The PDF could not be opened right now. Try again in a minute.": "Не удалось открыть PDF. Попробуйте через минуту.",
   "PRESIDENTIAL SCHOOL · LIBRARY": "ПРЕЗИДЕНТСКАЯ ШКОЛА · БИБЛИОТЕКА",
   "Desk": "Панель",
 };
@@ -3913,6 +3956,101 @@ const studentByNo = (no) => students.find((s) => s.no === no);
 // it keeps the library on the server instead, so every device sees the same books, people and loans.
 const STORE_KEY = 'circulation-desk-v5';
 const API = (document.querySelector('meta[name="library-api"]') || {}).content || '';   // set only in the hosted build
+
+// ================================================================ PDF e-books (the files live on Supabase Storage; see netlify/functions/library.mjs)
+const EBOOK_MB = 50;
+const ebookOn = () => !!API;
+const fmtSize = (n) => (n >= 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
+let ebookBusy = null;   // { id, pct } while a file is going up
+/** Who is asking: the desk (full view) or a signed-in reader. Null when nobody is signed in. */
+const ebookAuth = () => (remote.view === 'full' && remote.token ? { authorization: `Bearer ${remote.token}` } : me && me.token ? { authorization: `Reader ${me.token}` } : null);
+/** In the book list: "PDF" and a button to read it (or to sign in first). */
+function ebookRow(b) {
+  if (!b.ebook || !ebookOn()) return '';
+  return `<span class="ebook-row"><span class="pill ebook-pill">PDF</span>${ebookAuth()
+    ? `<button type="button" class="btn small" data-ebook-open="${b.id}">${t('Read PDF')}</button>`
+    : `<button type="button" class="btn small" data-signin>${t('Sign in to read the PDF')}</button>`}</span>`;
+}
+/** Under an opened title at the desk: add, open, replace or remove the PDF. */
+function ebookTools(b) {
+  if (!ebookOn()) return '';
+  if (ebookBusy && ebookBusy.id === b.id) return `<span class="ebook-prog" data-ebook-prog role="status">${t('Uploading… {n}%', { n: ebookBusy.pct })}</span>`;
+  const pick = (label) => `<label class="btn small">${label}<input type="file" accept="application/pdf,.pdf" hidden data-ebook-file="${b.id}"></label>`;
+  if (!b.ebook) return pick(t('Add a PDF (e-book)'));
+  return `<span class="pill ebook-pill" title="${esc(b.ebook.name || '')}">PDF · ${fmtSize(b.ebook.size || 0)}</span>
+    <button type="button" class="btn small" data-ebook-open="${b.id}">${t('Open PDF')}</button>${pick(t('Replace PDF'))}
+    <button type="button" class="btn small" data-ebook-drop="${b.id}">${t('Remove PDF')}</button>`;
+}
+const ebookGone = (id, v) => fetch(`${API}/ebook?id=${id}&v=${encodeURIComponent(v)}`, { method: 'DELETE', headers: { authorization: `Bearer ${remote.token}` } }).catch(() => {});
+/** A PDF chosen at the desk: check it, get a one-time upload link from the server, send the file straight to storage, then let the book remember it. */
+async function ebookUpload(b, file) {
+  if (!ebookOn() || remote.view !== 'full' || !remote.token) return toast(t('The PDF could not be uploaded. Check the internet and try again.'));
+  if (ebookBusy) return;
+  if (file.size > EBOOK_MB * 1048576) return toast(t('The PDF is larger than {n} MB.', { n: EBOOK_MB }));
+  const head = new Uint8Array(await file.slice(0, 1024).arrayBuffer());
+  let text = ''; head.forEach((c) => { text += String.fromCharCode(c); });
+  if (!text.includes('%PDF-')) return toast(t('That file is not a PDF.'));
+  ebookBusy = { id: b.id, pct: 0 }; renderAll();
+  let grant = null;
+  try {
+    const res = await fetch(`${API}/ebook?id=${b.id}`, { method: 'POST', headers: { authorization: `Bearer ${remote.token}`, 'content-type': 'application/json' }, body: JSON.stringify({ size: file.size, name: file.name }) });
+    grant = await res.json().catch(() => ({}));
+    if (!res.ok) throw Object.assign(new Error(grant.error || 'storage'), { code: grant.error });
+    await new Promise((resolve, reject) => {
+      const x = new XMLHttpRequest(), form = new FormData();
+      form.append('cacheControl', '3600'); form.append('', file);
+      x.open('PUT', grant.upload);
+      if (grant.key) x.setRequestHeader('apikey', grant.key);
+      x.upload.onprogress = (ev) => {
+        if (!ev.lengthComputable || !ebookBusy) return;
+        ebookBusy.pct = Math.min(99, Math.round((ev.loaded / ev.total) * 100));
+        $$('[data-ebook-prog]').forEach((el) => { el.textContent = t('Uploading… {n}%', { n: ebookBusy.pct }); });
+      };
+      x.onload = () => (x.status >= 200 && x.status < 300 ? resolve() : reject(new Error(`upload ${x.status}`)));
+      x.onerror = () => reject(new Error('network'));
+      x.send(form);
+    });
+  } catch (err) {
+    ebookBusy = null; renderAll();
+    return toast(err.code === 'no-storage' ? t('PDF storage is not connected yet. See the setup steps in the README.') : err.code === 'size' ? t('The PDF is larger than {n} MB.', { n: EBOOK_MB }) : t('The PDF could not be uploaded. Check the internet and try again.'));
+  }
+  const old = b.ebook;
+  b.ebook = { v: grant.v, name: file.name.slice(0, 120), size: file.size, at: new Date().toISOString().slice(0, 10) };
+  ebookBusy = null;
+  record('ebook', b.enTitle, `${file.name} · ${fmtSize(file.size)}`.slice(0, 200)); save(); renderAll();
+  toast(t('PDF saved for “{title}”.', { title: b.title }));
+  if (old && old.v) ebookGone(b.id, old.v);   // the file it replaces is deleted
+}
+/** Open a book's PDF in a new tab. The tab is opened at once (browsers block one opened after waiting) and sent to the link when it arrives. */
+async function ebookOpen(b) {
+  const auth = ebookAuth();
+  if (!auth) return toast(t('Sign in to read the PDF'));
+  const w = window.open('', '_blank');
+  const fail = (msg) => { if (w) w.close(); toast(msg); };
+  try {
+    const res = await fetch(`${API}/ebook?id=${b.id}`, { headers: auth, cache: 'no-store' });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok || !d.url) return fail(res.status === 401 ? t('Sign in again to read the PDF.') : res.status === 404 ? t('The PDF is no longer there. Ask the librarian.') : t('The PDF could not be opened right now. Try again in a minute.'));
+    if (w) w.location.href = d.url; else location.href = d.url;
+  } catch (_) { fail(t('The PDF could not be opened right now. Try again in a minute.')); }
+}
+document.addEventListener('change', (e) => {
+  const input = e.target.closest && e.target.closest('[data-ebook-file]'); if (!input || !input.files[0]) return;
+  const b = bookById(Number(input.dataset.ebookFile)), file = input.files[0]; input.value = '';
+  if (b) ebookUpload(b, file);
+});
+document.addEventListener('click', async (e) => {
+  const open = e.target.closest('[data-ebook-open]');
+  if (open) { const b = bookById(Number(open.dataset.ebookOpen)); if (b) ebookOpen(b); return; }
+  const drop = e.target.closest('[data-ebook-drop]'); if (!drop) return;
+  const b = bookById(Number(drop.dataset.ebookDrop)); if (!b || !b.ebook || !armed(drop, t('Click again to remove'))) return;
+  try {
+    const res = await fetch(`${API}/ebook?id=${b.id}&v=${encodeURIComponent(b.ebook.v)}`, { method: 'DELETE', headers: { authorization: `Bearer ${remote.token}` } });
+    if (!res.ok) throw new Error('storage');
+  } catch (_) { return toast(t('The PDF could not be removed. Check the internet and try again.')); }
+  delete b.ebook; record('ebook', b.enTitle, 'removed'); save(); renderAll(); toast(t('PDF removed.'));
+});
+
 const snapshot = () => ({ people: students, books, copies, loans, reservations, requests, assignments, likes, log: activity, nextLoanId, seed, pinSeed, houseSeed, picRev });
 /** The lists a backup file or a saved copy may carry, old files included (they simply have fewer). */
 const pickData = (d) => ({ people: d.people, books: d.books, copies: d.copies, loans: d.loans, reservations: d.reservations, requests: d.requests, assignments: d.assignments, likes: d.likes, log: d.log, nextLoanId: d.nextLoanId, seed: d.seed, pinSeed: d.pinSeed, houseSeed: d.houseSeed, picRev: d.picRev });
@@ -4911,7 +5049,7 @@ function ttRender() {
         <td class="acts">${c.status === 'AVAILABLE' ? `<button type="button" class="btn small" data-issue="${esc(c.barcode)}">${t('Issue this copy')}</button>` : ''}${copyTools(c)}</td></tr>`; }).join('')}</tbody></table></div>
         ${a.holds ? `<p class="hint">${t('{students} waiting: {names}. The next returned copy goes to the hold shelf.', { students: plural(a.holds, 'student'), names: pendingHolds(a.book.id).map((r) => esc(studentById(r.studentId).name)).join(', ') })}</p>` : ''}</td></tr>`;
     return `<tr>
-      <td data-label="${t('Title')}"><div class="cell">${miniCover(a.book)}<div><button type="button" class="link" data-title="${a.book.id}" aria-expanded="${open}">${esc(a.book.title)}</button> ${featureTags(a.book)}${origTitle(a.book)}<span class="sub">${esc(a.book.author)}${a.book.isbn ? ` · <span class="mono">${esc(a.book.isbn)}</span>` : ''}</span></div></div></td>
+      <td data-label="${t('Title')}"><div class="cell">${miniCover(a.book)}<div><button type="button" class="link" data-title="${a.book.id}" aria-expanded="${open}">${esc(a.book.title)}</button> ${featureTags(a.book)}${a.book.ebook ? '<span class="pill ebook-pill">PDF</span>' : ''}${origTitle(a.book)}<span class="sub">${esc(a.book.author)}${a.book.isbn ? ` · <span class="mono">${esc(a.book.isbn)}</span>` : ''}</span></div></div></td>
       <td data-label="${t('Copies')}"><div><span class="copies" role="img" aria-label="${t('{a} on shelf, {b} borrowed', { a: a.available, b: a.borrowed })}${a.onHold ? t(', {n} on hold', { n: a.onHold }) : ''}">${strip}</span></div></td>
       <td data-label="${t('Total')}" class="num">${a.total}</td>
       <td data-label="${t('On shelf')}" class="num"><strong style="color:var(${a.available ? '--ok' : '--bad'})">${a.available}</strong></td>
@@ -5786,19 +5924,20 @@ function catRender(animate) {
   const counts = { ALL: all.length, IN: all.filter((a) => a.available > 0).length, OUT: all.filter((a) => a.total > 0 && a.available === 0).length };
   const isFresh = (b) => !!b.addedOn && diffDays(today(), b.addedOn) <= 30;
   counts.NEW = all.filter((a) => isFresh(a.book)).length;
+  counts.PDF = ebookOn() ? all.filter((a) => a.book.ebook).length : 0;
   counts.READ = all.filter((a) => a.borrowed > 0).length;   // among thousands of titles, this is the short way to "who has what"
-  if ((bd.filter === 'NEW' && !counts.NEW) || (bd.filter === 'READ' && !counts.READ)) bd.filter = 'ALL';
-  $('#bd-filters').innerHTML = [['ALL', t('All books')], ['IN', t('On the shelf')], ...(counts.READ ? [['READ', t('Being read')]] : []), ['OUT', t('All out')], ...(counts.NEW ? [['NEW', t('New arrivals')]] : [])].map(([k, label]) =>
+  if ((bd.filter === 'NEW' && !counts.NEW) || (bd.filter === 'READ' && !counts.READ) || (bd.filter === 'PDF' && !counts.PDF)) bd.filter = 'ALL';
+  $('#bd-filters').innerHTML = [['ALL', t('All books')], ['IN', t('On the shelf')], ...(counts.READ ? [['READ', t('Being read')]] : []), ['OUT', t('All out')], ...(counts.NEW ? [['NEW', t('New arrivals')]] : []), ...(counts.PDF ? [['PDF', t('E-books (PDF)')]] : [])].map(([k, label]) =>
     `<button type="button" class="chip solid" data-filter="${k}" aria-pressed="${bd.filter === k}">${label} <span class="num">${counts[k]}</span></button>`).join('');
   const k = norm(bd.q);
-  const rows = all.filter((a) => (bd.filter === 'ALL' || (bd.filter === 'NEW' ? isFresh(a.book) : bd.filter === 'READ' ? a.borrowed > 0 : bd.filter === 'IN' ? a.available > 0 : a.total > 0 && a.available === 0)) && (!k || bookMatches(a.book, k)));
+  const rows = all.filter((a) => (bd.filter === 'ALL' || (bd.filter === 'NEW' ? isFresh(a.book) : bd.filter === 'PDF' ? !!a.book.ebook : bd.filter === 'READ' ? a.borrowed > 0 : bd.filter === 'IN' ? a.available > 0 : a.total > 0 && a.available === 0)) && (!k || bookMatches(a.book, k)));
   const shown = rows.slice(0, bd.limit);
   $('#cat-more').innerHTML = moreRow(shown.length, rows.length, 'cat');
   $('#cat-body').innerHTML = shown.map((a, i) => {
     const out = loansOutOf(a.book.id);
     return `<article class="cat-row ${a.available > 0 ? '' : 'out'}" style="--i:${Math.min(i, 16)}">
       ${miniCover(a.book, true)}
-      <div class="cat-main">${isFresh(a.book) ? `<span class="pill ink" style="margin-bottom:4px">${t('New')}</span>` : ''}<h3>${esc(a.book.title)}</h3>${origTitle(a.book)}<span class="sub">${esc(a.book.author)}</span></div>
+      <div class="cat-main">${isFresh(a.book) ? `<span class="pill ink" style="margin-bottom:4px">${t('New')}</span>` : ''}<h3>${esc(a.book.title)}</h3>${origTitle(a.book)}<span class="sub">${esc(a.book.author)}</span>${ebookRow(a.book)}</div>
       <dl class="cat-counts">
         <div><dt>${t('Total')}</dt><dd>${a.total}</dd></div>
         <div><dt>${t('On shelf')}</dt><dd class="${a.available ? 'yes' : 'no'}">${a.available}</dd></div>
@@ -6452,7 +6591,7 @@ const LOG_LABEL = {
   issue: 'Issued', return: 'Returned', extend: 'Loan extended', reserve: 'Reserved on the site', 'hold-cancel': 'Reservation cancelled', 'hold-days': 'Reservation length changed', pic: 'Profile picture changed',
   'renew-ask': 'Asked for more days', 'renew-drop': 'Request withdrawn', 'renew-yes': 'More days approved', 'renew-no': 'More days declined',
   assign: 'Reading set for classes', unassign: 'Class reading removed', 'book-add': 'Book added', 'book-edit': 'Book changed', 'book-del': 'Book removed',
-  feature: 'Featured book changed', cover: 'Cover picture changed', copy: 'Copy status changed', 'person-add': 'Person added', 'person-edit': 'Person changed', 'person-del': 'Person removed',
+  feature: 'Featured book changed', cover: 'Cover picture changed', ebook: 'PDF e-book changed', copy: 'Copy status changed', 'person-add': 'Person added', 'person-edit': 'Person changed', 'person-del': 'Person removed',
   'person-off': 'Card switched off', 'person-on': 'Card switched on', pin: 'Code changed at the desk', 'pin-self': 'Code changed by the reader',
   'loan-del': 'Removed from history', year: 'New school year', data: 'Backup file loaded',
 };
@@ -6494,6 +6633,7 @@ function titleTools(a) {
     <button type="button" class="btn small" data-title-edit="${b.id}">${t('Edit title')}</button>
     <label class="btn small">${t(b.cover ? 'Change the cover' : 'Add a cover picture')}<input type="file" accept="image/*" hidden data-cover-file="${b.id}"></label>
     ${b.cover ? `<button type="button" class="btn small" data-cover-drop="${b.id}">${t('Remove the cover')}</button>` : ''}
+    ${ebookTools(b)}
     ${neverLent(b.id) && !a.onHold ? `<button type="button" class="btn small" data-title-del="${b.id}">${t('Delete this book')}</button>` : ''}
   </div>`;
 }
