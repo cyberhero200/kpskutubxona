@@ -14,6 +14,7 @@
 //   POST /api/library/act            { op, … }        reader: ask for more days (renew / unrenew), set a monthly goal (goal), change
 //                                                     their own code (pin), change the days of a booking (holddays), like a post of the reading
 //                                                     feed (like) or stay out of the feed (feed); a teacher: set reading for classes (assign / unassign)
+//   GET  /api/library/audio?id=12&v=x signed-in    a link (valid for hours) to one chapter of the book's audiobook;  POST / DELETE (librarian) add or remove a chapter file
 //   GET  /api/library/ebook?id=12    signed-in    a short-lived link to the book's PDF;  POST (librarian) asks for an upload link, DELETE (librarian) removes a file
 //   GET  /api/library/cover?id=12    anyone           the cover picture of a book;  PUT (librarian) stores it, an empty PUT removes it
 //   PUT  /api/library/avatar         reader           stores a profile picture (a small JPEG) and answers { v }; the reader then makes it
@@ -38,7 +39,7 @@ const WAIT_SECONDS = 30;              // kept short: a whole school often shares
 const PUBLIC_CACHE_SECONDS = 10;      // how long Netlify's CDN may reuse the public answer
 const READER_DAYS = 90;               // how long a reader stays signed in on a device
 const ZONE_HOURS = 5;                 // the school's clock: Asia/Samarkand, UTC+5, no daylight saving
-const SERVER_VER = 11;                 // raise with every change the page relies on: the desk warns when the page is newer than this file
+const SERVER_VER = 12;                 // raise with every change the page relies on: the desk warns when the page is newer than this file
 const JOURNAL = 1000;                 // how many recent steps are remembered for a desk that saves late (likes are steps too)
 const COVER_BYTES = 200_000;          // a cover picture is a small JPEG the page has already cut to size
 const AVATAR_BYTES = 80_000;          // a profile picture: 320 x 320, cut by the page
@@ -2322,12 +2323,67 @@ async function ebook(req, url, s) {
   return json({ error: 'method' }, 405);
 }
 
+// ---- Audiobooks. Same idea as the PDFs, in a second private bucket: every chapter is one audio file the librarian's browser sends straight
+// to Supabase. The book remembers book.audio = { tracks: [{ v, title, size, dur }], at }; a file's name in the bucket is made from the
+// book's number and v. A reader gets a link for one chapter that stays valid for four hours, so a long chapter keeps playing.
+const AUDIO_BUCKET = 'audiobooks';
+const AUDIO_MB = 50;                                   // per chapter, the free Supabase plan's limit; longer recordings are split into chapters
+const AUDIO_TYPES = ['audio/mpeg', 'audio/mp3', 'audio/mp4', 'audio/x-m4a', 'audio/m4a', 'audio/aac', 'audio/ogg', 'audio/opus', 'audio/wav', 'audio/x-wav', 'audio/webm', 'audio/flac'];
+const audioPath = (id, v) => `audio-${id}-${v}`;
+let audioBucketReady = false;
+async function audioBucket(cfg) {
+  if (audioBucketReady) return true;
+  const r = await sb(cfg, 'POST', '/bucket', { id: AUDIO_BUCKET, name: AUDIO_BUCKET, public: false, file_size_limit: AUDIO_MB * 1024 * 1024, allowed_mime_types: AUDIO_TYPES });
+  if (r.ok || r.status === 409 || (r.status === 400 && /exist/i.test(JSON.stringify(r.data)))) return (audioBucketReady = true);
+  console.error('audiobook bucket could not be made:', r.status, JSON.stringify(r.data));
+  return false;
+}
+async function audio(req, url, s) {
+  const id = Number(url.searchParams.get('id'));
+  if (!Number.isInteger(id) || id < 1) return json({ error: 'bad' }, 400);
+  const cfg = ebookCfg();
+  if (!cfg) return json({ error: 'no-storage' }, 503);
+  if (req.method === 'GET') {   // a reader (or the desk) plays one chapter
+    const v = url.searchParams.get('v');
+    if (!ebookVer(v)) return json({ error: 'bad' }, 400);
+    const doc = withStart(await s.get('doc', { type: 'json' }));
+    if (!(await signedIn(req, s)) && !readerOf(req, doc.data, await secret(s))) return json({ error: 'auth' }, 401);
+    const b = doc.data.books.find((x) => x.id === id);
+    if (!b || !b.audio || !Array.isArray(b.audio.tracks) || !b.audio.tracks.some((t) => t && t.v === v)) return json({ error: 'none' }, 404);
+    const r = await sb(cfg, 'POST', `/object/sign/${AUDIO_BUCKET}/${audioPath(id, v)}`, { expiresIn: 14400 });
+    const link = r.ok && r.data && (r.data.signedURL || r.data.signedUrl);
+    if (!link) return r.status === 404 || r.status === 400 ? json({ error: 'gone' }, 404) : json({ error: 'storage' }, 502);
+    return json({ url: ebookUrl(cfg, link) });
+  }
+  if (!(await signedIn(req, s))) return json({ error: 'auth' }, 401);
+  if (req.method === 'POST') {   // the desk adds a chapter: hand out a one-time upload link
+    let body = null; try { body = await req.json(); } catch (_) { /* not JSON */ }
+    const size = Number(body && body.size);
+    if (!Number.isFinite(size) || size < 1000 || size > AUDIO_MB * 1024 * 1024) return json({ error: 'size', max: AUDIO_MB }, 400);
+    if (!(await audioBucket(cfg))) return json({ error: 'storage' }, 502);
+    const v = Date.now().toString(36) + randomBytes(2).toString('hex');
+    const r = await sb(cfg, 'POST', `/object/upload/sign/${AUDIO_BUCKET}/${audioPath(id, v)}`, {});
+    const link = r.ok && r.data && r.data.url;
+    if (!link) { console.error('audiobook upload link failed:', r.status, JSON.stringify(r.data)); return json({ error: 'storage' }, 502); }
+    const key = env('SUPABASE_PUBLISHABLE_KEY').trim();
+    return json({ v, upload: ebookUrl(cfg, link), ...(key ? { key } : {}) });
+  }
+  if (req.method === 'DELETE') {   // a removed chapter
+    const v = url.searchParams.get('v');
+    if (!ebookVer(v)) return json({ error: 'bad' }, 400);
+    const r = await sb(cfg, 'DELETE', `/object/${AUDIO_BUCKET}/${audioPath(id, v)}`);
+    return r.ok || r.status === 404 ? json({ ok: true }) : json({ error: 'storage' }, 502);
+  }
+  return json({ error: 'method' }, 405);
+}
+
 export default async (req, context) => {
   try {
     const url = new URL(req.url), s = store();
     const post = (run) => (req.method === 'POST' ? run() : json({ error: 'method' }, 405));
     if (url.pathname.endsWith('/reader/login')) return await post(() => readerLogin(req, context, s));
     if (url.pathname.endsWith('/ebook')) return await ebook(req, url, s);
+    if (url.pathname.endsWith('/audio')) return await audio(req, url, s);
     if (url.pathname.endsWith('/cover')) return await cover(req, url, s);
     if (url.pathname.endsWith('/avatar')) return await avatar(req, url, s);
     if (url.pathname.endsWith('/pics')) return await picsList(req, s);
@@ -2344,4 +2400,4 @@ export default async (req, context) => {
   }
 };
 
-export const config = { path: ['/api/library', '/api/library/login', '/api/library/reader/login', '/api/library/reserve', '/api/library/unreserve', '/api/library/act', '/api/library/cover', '/api/library/ebook', '/api/library/avatar', '/api/library/pics'] };
+export const config = { path: ['/api/library', '/api/library/login', '/api/library/reader/login', '/api/library/reserve', '/api/library/unreserve', '/api/library/act', '/api/library/cover', '/api/library/ebook', '/api/library/audio', '/api/library/avatar', '/api/library/pics'] };

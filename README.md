@@ -176,6 +176,16 @@ Bilib qo‘ying:
 - Supabase bepul tarifida jami 1 GB joy bor.
 - Zaxira fayli (**Ma’lumotlar → Zaxira faylini saqlash**) PDF fayllarning o‘zini emas, faqat qaysi kitobda PDF borligini saqlaydi.
 
+### Audiokitoblar
+
+Har bir kitobga bir nechta audio bob biriktirish mumkin; kitobxon **Tinglash** ni bosganda to‘liq ekranli pleyer ochiladi (muqova, 15 soniya orqaga/oldinga, tezlik, uyqu taymeri, boblar ro‘yxati, pastda kichik pleyer, qayerda to‘xtagan joyidan davom etish).
+
+**Qo‘shimcha sozlash shart emas:** PDF uchun ulangan `SUPABASE_URL` va `SUPABASE_SERVICE_KEY` shu yerda ham ishlaydi. Audio uchun alohida yopiq ombor (`audiobooks`) birinchi yuklashda o‘zi yaratiladi.
+
+**Kutubxonachi:** panel → **Kitoblar** → kitob nomini bosing → **Audio boblarni qo‘shish** (bir nechta faylni birdan tanlash mumkin; fayl nomlari bo‘yicha tartiblanadi, davomiyligi o‘zi o‘lchanadi). Boblarni nomlash, ↑/↓ bilan tartiblash, tinglab ko‘rish va ✕ bilan o‘chirish (ikki marta bosiladi) shu yerda.
+
+**Hajm:** Supabase bepul tarifida bitta fayl 50 MB gacha, jami taxminan 1 GB. Shuning uchun uzun kitobni 10–20 daqiqalik boblarga bo‘ling (MP3 64–96 kbit/s bo‘lsa, 50 MB taxminan 70–100 daqiqa).
+
 ## Bilib qo‘ying
 
 - **Kim o‘zgartira oladi.** Faqat parolni kiritgan qurilma. Parolni server tekshiradi, sahifa ichida parol ham, uning izi ham yo‘q.
