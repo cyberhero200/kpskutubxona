@@ -1172,6 +1172,29 @@ html.au-lock, html.au-lock body { overflow: hidden; }
 .aumini-tx { min-width: 0; display: grid; } .aumini-tx b { font: 700 14px var(--font-ui); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .aumini-tx small { opacity: .75; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .aumini .au-ib svg { width: 22px; height: 22px; }
 #toast { z-index: 120; }
+.au > .au-bg { position: absolute; inset: -40px; max-width: none; width: auto; z-index: 0; background-size: cover; background-position: center; filter: blur(46px) saturate(1.4); opacity: .55; transform: scale(1.15); pointer-events: none; }
+.au > * { z-index: 1; } .au > .au-bg { z-index: 0; }
+.au-cover { width: min(80vw, 360px, 46vh); transform: scale(.9); transition: transform .5s cubic-bezier(.2,.8,.2,1), box-shadow .5s; box-shadow: 0 18px 44px rgba(0,0,0,.45), 0 0 0 2px rgba(226,176,74,.7); }
+.au.playing .au-cover { transform: scale(1); box-shadow: 0 34px 90px rgba(0,0,0,.65), 0 0 70px rgba(226,176,74,.35), 0 0 0 2px rgba(226,176,74,.9); }
+.au-play { width: 84px; height: 84px; } .au-play svg { width: 38px; height: 38px; }
+.au.playing .au-play { box-shadow: 0 0 0 0 rgba(226,176,74,.5), 0 8px 24px rgba(0,0,0,.4); animation: aupulse 2.4s ease-out infinite; }
+@keyframes aupulse { 70% { box-shadow: 0 0 0 20px rgba(226,176,74,0), 0 8px 24px rgba(0,0,0,.4); } 100% { box-shadow: 0 0 0 0 rgba(226,176,74,0), 0 8px 24px rgba(0,0,0,.4); } }
+.au .au-title { font-size: clamp(22px, 6vw, 32px); color: #fff !important; opacity: 1; } .au-author { color: rgba(255,255,255,.8); }
+@media (min-width: 900px) {
+  .au { display: grid; grid-template-columns: minmax(300px, 1fr) minmax(380px, 520px); grid-template-rows: auto 1fr auto auto 1fr; column-gap: 72px; align-content: center; justify-content: center; padding: 28px 56px; }
+  .au > * { max-width: none; }
+  .au-top { grid-column: 1 / -1; align-self: start; }
+  .au-stage { grid-column: 1; grid-row: 2 / 6; align-self: center; margin: 0; }
+  .au-cover { width: min(30vw, 440px, 50vh); }
+  .au-seekbox, .au-ctl, .au-sub { grid-column: 2; }
+  .au-seekbox { grid-row: 2; align-self: end; } .au-ctl { grid-row: 3; align-self: start; } .au-sub { grid-row: 4; align-self: start; }
+  .au-list { grid-column: 2; grid-row: 5; align-self: start; display: block; max-height: 36vh; }
+  .au-list[hidden] { display: block; }
+  .au-sub .au-chip:last-child { display: none; }
+  .au.list-on .au-cover { display: block; }
+}
+@media (prefers-reduced-motion: reduce) { .au.playing .au-play { animation: none; } .au-cover { transition: none; } }
+
 @media (prefers-reduced-motion: reduce) { .au { animation: none; } .au-eq b, .au-spin { animation-duration: 3s; } }
 </style>
 </head>
@@ -4374,7 +4397,8 @@ function auClick(e) {
 function auBuild() {
   const b = AU.b, el = $('#au');
   el.setAttribute('aria-label', `${t('Audiobook')}: ${b.title}`); el.setAttribute('style', hueStyle(b));
-  el.innerHTML = `<header class="au-top"><button type="button" class="au-ib" data-au="min" aria-label="${t('Minimize')}" title="${t('Minimize')}">${audioIco.down}</button><span class="au-eyebrow">${t('Audiobook')}</span><button type="button" class="au-ib" data-au="list" aria-label="${t('Chapters')}" title="${t('Chapters')}">${audioIco.list}</button></header>
+  const bgImg = coverSrc(b) && !/^\s*$/.test(coverSrc(b)) ? `<div class="au-bg" aria-hidden="true" style="background-image:url('${esc(coverSrc(b))}')"></div>` : '<div class="au-bg" aria-hidden="true"></div>';
+  el.innerHTML = `${bgImg}<header class="au-top"><button type="button" class="au-ib" data-au="min" aria-label="${t('Minimize')}" title="${t('Minimize')}">${audioIco.down}</button><span class="au-eyebrow">${t('Audiobook')}</span><button type="button" class="au-ib" data-au="list" aria-label="${t('Chapters')}" title="${t('Chapters')}">${audioIco.list}</button></header>
     <div class="au-stage"><div class="au-cover">${coverArt(b)}</div>
     <h2 class="au-title">${esc(b.title)}</h2><p class="au-author">${esc(b.author || '')}</p><p class="au-chap" data-au-chap></p></div>
     <div class="au-seekbox"><input type="range" class="au-seek" data-au-seek min="0" max="1" step="1" value="0" aria-label="${t('Audiobook')}"><div class="au-times"><span data-au-cur>0:00</span><span data-au-left>−0:00</span></div></div>
@@ -4404,9 +4428,9 @@ function auRender() {
   const sl = $('#au [data-au-sleep] span'); if (sl) sl.textContent = AU.sleep ? (AU.sleep.opt === 'end' ? t('Sleep at chapter end') : t('Sleep in {n} min', { n: Math.max(1, Math.ceil((AU.sleep.at - Date.now()) / 60000)) })) : t('Sleep timer');
   const slb = $('#au [data-au-sleep]'); if (slb) slb.classList.toggle('on', !!AU.sleep);
   const pv = $('#au [data-au="prev"]'), nx = $('#au [data-au="next"]'); if (pv) pv.disabled = false; if (nx) nx.disabled = i >= tr.length - 1;
-  const root = $('#au'); if (root) root.classList.toggle('list-on', !!AU.list);
+  const root = $('#au'); if (root) { root.classList.toggle('list-on', !!AU.list); root.classList.toggle('playing', playing); }
   const ls = $('#au [data-au-list]');
-  if (ls) { ls.hidden = !AU.list; if (AU.list) ls.innerHTML = tr.map((x, n) => `<button type="button" class="au-li${x.v === AU.v ? ' on' : ''}" data-au-pick="${x.v}"><span class="n">${x.v === AU.v && playing ? '<i class="au-eq" aria-hidden="true"><b></b><b></b><b></b></i>' : n + 1}</span><span class="tt">${esc(x.title || t('Chapter {n}', { n: n + 1 }))}</span><span class="d">${x.dur ? fmtClock(x.dur) : ''}</span></button>`).join(''); }
+  if (ls) { const wide = matchMedia('(min-width: 900px)').matches; ls.hidden = !AU.list && !wide; if (AU.list || wide) ls.innerHTML = tr.map((x, n) => `<button type="button" class="au-li${x.v === AU.v ? ' on' : ''}" data-au-pick="${x.v}"><span class="n">${x.v === AU.v && playing ? '<i class="au-eq" aria-hidden="true"><b></b><b></b><b></b></i>' : n + 1}</span><span class="tt">${esc(x.title || t('Chapter {n}', { n: n + 1 }))}</span><span class="d">${x.dur ? fmtClock(x.dur) : ''}</span></button>`).join(''); }
   if ('mediaSession' in navigator) navigator.mediaSession.playbackState = playing ? 'playing' : 'paused';
 }
 function auMeta() {
