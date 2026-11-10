@@ -1172,6 +1172,43 @@ html.au-lock, html.au-lock body { overflow: hidden; }
 .aumini-tx { min-width: 0; display: grid; } .aumini-tx b { font: 700 14px var(--font-ui); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .aumini-tx small { opacity: .75; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .aumini .au-ib svg { width: 22px; height: 22px; }
 #toast { z-index: 120; }
+html.rd-lock, html.rd-lock body { overflow: hidden; }
+.rd { position: fixed; inset: 0; z-index: 85; display: flex; flex-direction: column; background: #e9e6df; color: #1b1d22; --rdbar: #fbfaf7; --rdline: rgba(0,0,0,.14); animation: auin .3s cubic-bezier(.22,1,.36,1); }
+.rd[hidden] { display: none; }
+.rd[data-theme="sepia"] { background: #e6d9bd; color: #3b2f1c; --rdbar: #f3e9d2; }
+.rd[data-theme="night"] { background: #0e0f12; color: #e6e3dc; --rdbar: #17191e; --rdline: rgba(255,255,255,.16); }
+.rd-top, .rd-foot { display: flex; align-items: center; gap: 4px; background: var(--rdbar); padding: 6px 8px; flex: none; }
+.rd-top { padding-top: max(6px, env(safe-area-inset-top)); border-bottom: 1px solid var(--rdline); }
+.rd-foot { gap: 12px; padding: 8px 14px max(8px, env(safe-area-inset-bottom)); border-top: 1px solid var(--rdline); }
+.rd-ib { width: 44px; height: 44px; border: 0; border-radius: 50%; background: transparent; color: inherit; display: inline-grid; place-items: center; cursor: pointer; flex: none; transition: background .15s, transform .12s cubic-bezier(.34,1.56,.64,1); }
+.rd-ib:hover { background: var(--rdline); } .rd-ib:active { transform: scale(.9); } .rd-ib svg { width: 22px; height: 22px; }
+.rd-ib.tx { font: 700 14px var(--font-ui); } .rd-ib.on { color: #c2932f; }
+.rd-tt { flex: 1; min-width: 0; display: grid; padding: 0 6px; } .rd-tt b { font: 700 15px var(--font-ui); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .rd-tt small { font-size: 12px; opacity: .7; }
+.rd-bar { height: 3px; background: var(--rdline); flex: none; } .rd-bar i { display: block; height: 3px; width: 0; background: #c2932f; transition: width .2s cubic-bezier(.22,1,.36,1); }
+.rd-body { flex: 1; overflow: auto; -webkit-overflow-scrolling: touch; outline: none; }
+.rd-pages { --z: 1; width: calc(min(100% - 16px, 860px) * var(--z)); margin: 12px auto 40px; display: grid; gap: 12px; }
+.rd-pg { position: relative; background: #fff; box-shadow: 0 2px 14px rgba(0,0,0,.18); overflow: hidden; }
+.rd-pg canvas { display: block; width: 100%; height: 100%; }
+.rd-no { position: absolute; inset: 0; display: grid; place-items: center; font: 700 28px var(--font-ui); color: rgba(0,0,0,.14); }
+.rd-pg canvas { position: relative; }
+.rd[data-theme="sepia"] .rd-pg { filter: sepia(.38) brightness(.97); }
+.rd[data-theme="night"] .rd-pg { filter: invert(.92) hue-rotate(180deg); box-shadow: none; }
+.rd-load { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 22vh 16px 0; font: 600 15px var(--font-ui); } .rd-load[hidden] { display: none; }
+.rd-load .au-spin { border-color: var(--rdline); border-top-color: currentColor; }
+.rd-range { flex: 1; min-width: 0; height: 28px; accent-color: #c2932f; }
+.rd-pn { font: 700 13px var(--font-ui); font-variant-numeric: tabular-nums; white-space: nowrap; min-width: 64px; text-align: right; }
+.rd-chip { border: 1px solid var(--rdline); background: transparent; color: inherit; border-radius: 999px; padding: 0 12px; min-height: 40px; font: 700 12px var(--font-ui); cursor: pointer; white-space: nowrap; } .rd-chip[hidden] { display: none; }
+.aucard-play.read { background: var(--accent); color: var(--accent-fg); } .aucard-play.read svg { width: 22px; height: 22px; }
+.au-seekbox { position: relative; }
+.au-wave { height: 46px; display: flex; align-items: center; gap: 2px; }
+.au-wave i { flex: 1; min-width: 1px; border-radius: 2px; background: rgba(255,255,255,.28); transition: background .2s; } .au-wave i.on { background: var(--gold, #E2B04A); }
+.au-seekbox .au-seek { position: absolute; left: 0; top: 0; width: 100%; height: 46px; opacity: 0; margin: 0; }
+.au-seekbox:focus-within .au-wave { outline: 2px solid #fff; outline-offset: 4px; border-radius: 4px; }
+@media (max-width: 480px) { .au-sub { gap: 6px; flex-wrap: nowrap; } .au-chip { padding: 8px 10px; font-size: 12px; gap: 4px; white-space: nowrap; } }
+.au-mk-h { font: 700 11px var(--font-ui); letter-spacing: .14em; text-transform: uppercase; opacity: .7; padding: 12px 10px 4px; }
+.au-mk { display: flex; align-items: center; } .au-mk .au-li { flex: 1; } .au-mk .au-ib { width: 40px; height: 40px; flex: none; } .au-mk .au-ib svg { width: 16px; height: 16px; }
+@media (prefers-reduced-motion: reduce) { .rd { animation: none; } }
+
 .au-book { margin: 4px 0 0; font: 500 12px var(--font-ui); color: rgba(255,255,255,.75); min-height: 1.2em; }
 .aumini { overflow: hidden; }
 .aumini-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(255,255,255,.18); } .aumini-bar b { display: block; height: 3px; width: 0; background: var(--gold, #E2B04A); }
@@ -1300,6 +1337,7 @@ html.au-lock, html.au-lock body { overflow: hidden; }
     <div class="home-cols" id="home-cols">
       <div class="home-main">
         <div id="home-audio"></div>
+        <div id="home-ebook"></div>
         <div id="home-shelves"></div>
         <div class="sec-head">
           <div><h2>Trending now</h2><p>The books being borrowed the most right now.</p></div>
@@ -1323,6 +1361,7 @@ html.au-lock, html.au-lock body { overflow: hidden; }
       <p class="hint" id="cat-count"></p>
     </div>
     <div id="cat-audio"></div>
+    <div id="cat-ebook"></div>
     <div class="cat-list" id="cat-body"></div>
     <div class="more" id="cat-more"></div>
     <p class="empty" id="bd-empty" hidden></p>
@@ -2664,6 +2703,23 @@ const UZ = {
   "Open PDF": "PDFni ochish",
   "Read PDF": "PDF o‘qish",
   "Audiobook": "Audiokitob",
+  "Close the book": "Kitobni yopish",
+  "Bookmark this page": "Sahifaga xatcho‘p qo‘yish",
+  "Page colour": "Sahifa rangi",
+  "Smaller": "Kichikroq",
+  "Larger": "Kattaroq",
+  "Opening the book…": "Kitob ochilmoqda…",
+  "Page": "Sahifa",
+  "Bookmarks: {n}": "Xatcho‘plar: {n}",
+  "Page {a} of {b}": "{a}-bet / {b}",
+  "Continuing from page {n}.": "{n}-betdan davom etamiz.",
+  "Continue reading": "O‘qishni davom ettirish",
+  "E-books": "Elektron kitoblar",
+  "Read right here, on any device. The book opens on the page where you stopped.": "Shu yerning o‘zida, istalgan qurilmada o‘qing. Kitob to‘xtagan sahifangizda ochiladi.",
+  "Bookmark": "Xatcho‘p",
+  "Bookmarks": "Xatcho‘plar",
+  "Bookmark saved at {time}.": "Xatcho‘p saqlandi: {time}.",
+  "Remove bookmark": "Xatcho‘pni o‘chirish",
   "1 chapter": "1 bob",
   "{h} h {m} min": "{h} soat {m} daq",
   "{m} min": "{m} daq",
@@ -3611,6 +3667,23 @@ const RU = {
   "Open PDF": "Открыть PDF",
   "Read PDF": "Читать PDF",
   "Audiobook": "Аудиокнига",
+  "Close the book": "Закрыть книгу",
+  "Bookmark this page": "Закладка на этой странице",
+  "Page colour": "Цвет страницы",
+  "Smaller": "Мельче",
+  "Larger": "Крупнее",
+  "Opening the book…": "Книга открывается…",
+  "Page": "Страница",
+  "Bookmarks: {n}": "Закладки: {n}",
+  "Page {a} of {b}": "Стр. {a} из {b}",
+  "Continuing from page {n}.": "Продолжаем со страницы {n}.",
+  "Continue reading": "Продолжить чтение",
+  "E-books": "Электронные книги",
+  "Read right here, on any device. The book opens on the page where you stopped.": "Читайте прямо здесь, на любом устройстве. Книга откроется на странице, где вы остановились.",
+  "Bookmark": "Закладка",
+  "Bookmarks": "Закладки",
+  "Bookmark saved at {time}.": "Закладка сохранена: {time}.",
+  "Remove bookmark": "Удалить закладку",
   "1 chapter": "1 глава",
   "{h} h {m} min": "{h} ч {m} мин",
   "{m} min": "{m} мин",
@@ -4227,16 +4300,16 @@ async function ebookUpload(b, file) {
   if (old && old.v) ebookGone(b.id, old.v);   // the file it replaces is deleted
 }
 /** Open a book's PDF in a new tab. The tab is opened at once (browsers block one opened after waiting) and sent to the link when it arrives. */
-async function ebookOpen(b) {
+async function ebookOpen(b, opener) {
   const auth = ebookAuth();
   if (!auth) return toast(t('Sign in to read the PDF'));
-  const w = window.open('', '_blank');
-  const fail = (msg) => { if (w) w.close(); toast(msg); };
+  const w = null;
+  const fail = (msg) => { toast(msg); };
   try {
     const res = await fetch(`${API}/ebook?id=${b.id}`, { headers: auth, cache: 'no-store' });
     const d = await res.json().catch(() => ({}));
     if (!res.ok || !d.url) return fail(res.status === 401 ? t('Sign in again to read the PDF.') : res.status === 404 ? t('The PDF is no longer there. Ask the librarian.') : t('The PDF could not be opened right now. Try again in a minute.'));
-    if (w) w.location.href = d.url; else location.href = d.url;
+    if (!(await rdOpen(b, d.url, opener))) window.open(d.url, '_blank', 'noopener');   // the reader could not start: the browser's own viewer still can
   } catch (_) { fail(t('The PDF could not be opened right now. Try again in a minute.')); }
 }
 document.addEventListener('change', (e) => {
@@ -4246,7 +4319,7 @@ document.addEventListener('change', (e) => {
 });
 document.addEventListener('click', async (e) => {
   const open = e.target.closest('[data-ebook-open]');
-  if (open) { const b = bookById(Number(open.dataset.ebookOpen)); if (b) ebookOpen(b); return; }
+  if (open) { const b = bookById(Number(open.dataset.ebookOpen)); if (b) ebookOpen(b, open); return; }
   const drop = e.target.closest('[data-ebook-drop]'); if (!drop) return;
   const b = bookById(Number(drop.dataset.ebookDrop)); if (!b || !b.ebook || !armed(drop, t('Click again to remove'))) return;
   try {
@@ -4375,6 +4448,7 @@ function audioCard(b) {
 }
 /** The audiobook shelf: on the home page as a row (what you were listening to comes first), and as a grid at the top of Books when the Audiobooks filter is on. */
 function audioShelves() {
+  ebookShelves();
   const home = $('#home-audio'), cat = $('#cat-audio'); if (!home || !cat) return;
   const list = ebookOn() ? books.filter((b) => audioTracks(b).length) : [];
   if (!list.length) { setHtml(home, ''); setHtml(cat, ''); return; }
@@ -4435,7 +4509,26 @@ function auStep(d) {
   auPosSave(); auLoad(tr[i].v, 0, true); return true;
 }
 const auSkip = (s) => { if (!auEl.duration) return; auEl.currentTime = Math.min(Math.max(0, auEl.currentTime + s), auEl.duration); auRender(); };
-const auToggle = () => { if (!AU.b) return; if (auEl.paused) { if (!auEl.src) auLoad(AU.v, 0, true); else auEl.play().catch(() => {}); } else auEl.pause(); };
+const auToggle = () => { if (!AU.b) return; if (auEl.paused) { if (!auEl.src) auLoad(AU.v, 0, true); else { if (AU.pausedAt && Date.now() - AU.pausedAt > 300000) auEl.currentTime = Math.max(0, auEl.currentTime - 10); auEl.play().catch(() => {}); } } else auEl.pause(); };
+/** The line of bars you drag to move through a chapter: its shape comes from the chapter, the gold part is what you have heard. */
+function auWave(frac) {
+  const w = $('#au [data-au-wave]'); if (!w) return;
+  if (w.dataset.v !== String(AU.v)) { w.dataset.v = String(AU.v); let s = 7; for (const ch of String(AU.v)) s = (s * 31 + ch.charCodeAt(0)) >>> 0; w.innerHTML = Array.from({ length: 60 }, (_, k) => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return `<i style="height:${Math.round(18 + ((s >>> 24) / 255) * 82 * (0.5 + 0.5 * Math.sin(((k + 0.5) / 60) * Math.PI)))}%"></i>`; }).join(''); }
+  const n = Math.round(Math.min(1, Math.max(0, frac)) * 60); [...w.children].forEach((el, k) => el.classList.toggle('on', k < n));
+}
+const auMarkAll = () => { try { return JSON.parse(localStorage.getItem('audio-marks-v1') || '{}') || {}; } catch (_) { return {}; } };
+const auMarks = () => (AU.b ? auMarkAll()[`${auWho()}:${AU.b.id}`] || [] : []);
+function auMarkSet(list) { if (!AU.b) return; try { const m = auMarkAll(); m[`${auWho()}:${AU.b.id}`] = list.slice(0, 40); localStorage.setItem('audio-marks-v1', JSON.stringify(m)); } catch (_) { /* no storage */ } }
+function auMarkAdd() {
+  if (!AU.b || !AU.v) return; const s = Math.floor(auEl.currentTime || 0), list = auMarks();
+  if (!list.some((m) => m.v === AU.v && Math.abs(m.t - s) < 3)) auMarkSet([...list, { v: AU.v, t: s }]);
+  toast(t('Bookmark saved at {time}.', { time: fmtClock(s) })); AU.list = true; auRender();
+}
+function auMarksHtml(tr) {
+  const list = auMarks().filter((m) => tr.some((x) => x.v === m.v)); if (!list.length) return '';
+  const order = (m) => tr.findIndex((x) => x.v === m.v) * 1e6 + m.t;
+  return `<div class="au-mk-h">${t('Bookmarks')}</div>` + list.slice().sort((x, y) => order(x) - order(y)).map((m) => `<div class="au-mk"><button type="button" class="au-li" data-au-mark="${m.v}:${m.t}"><span class="n">${rdIco.markOn.replace('<svg ', '<svg width="14" height="14" ')}</span><span class="tt">${t('Chapter {n}', { n: tr.findIndex((x) => x.v === m.v) + 1 })}</span><span class="d">${fmtClock(m.t)}</span></button><button type="button" class="au-ib" data-au-unmark="${m.v}:${m.t}" aria-label="${t('Remove bookmark')}" title="${t('Remove bookmark')}">${audioIco.close}</button></div>`).join('');
+}
 function auSleepCycle() {
   const cur = AU.sleep ? AU.sleep.opt : null, n = AU_SLEEP[(AU_SLEEP.indexOf(cur) + 1) % AU_SLEEP.length];
   clearTimeout(AU.sleepT); AU.sleep = null;
@@ -4447,16 +4540,22 @@ function auEnsure() {
   if ($('#au')) return;
   document.body.insertAdjacentHTML('beforeend', `<div id="au" class="au" role="dialog" aria-modal="true" hidden></div><div id="aumini" class="aumini" hidden></div>`);
   $('#au').addEventListener('click', auClick); $('#aumini').addEventListener('click', auClick);
-  $('#au').addEventListener('input', (e) => { if (e.target.matches('[data-au-seek]')) { AU.drag = true; const v = Number(e.target.value); e.target.style.setProperty('--p', `${(v / (Number(e.target.max) || 1)) * 100}%`); const c = $('#au [data-au-cur]'); if (c) c.textContent = fmtClock(v); const r = $('#au [data-au-left]'); if (r) r.textContent = `−${fmtClock((auEl.duration || 0) - v)}`; } });
+  let ty = null;   // a swipe down puts the player away, as in a phone app
+  $('#au').addEventListener('touchstart', (e) => { ty = e.touches.length === 1 && !e.target.closest('.au-list, .au-seekbox, button') && $('#au').scrollTop <= 0 ? e.touches[0].clientY : null; }, { passive: true });
+  $('#au').addEventListener('touchend', (e) => { if (ty !== null && e.changedTouches[0].clientY - ty > 90) auMinimize(); ty = null; }, { passive: true });
+  $('#au').addEventListener('input', (e) => { if (e.target.matches('[data-au-seek]')) { AU.drag = true; const v = Number(e.target.value); auWave(v / (Number(e.target.max) || 1)); e.target.style.setProperty('--p', `${(v / (Number(e.target.max) || 1)) * 100}%`); const c = $('#au [data-au-cur]'); if (c) c.textContent = fmtClock(v); const r = $('#au [data-au-left]'); if (r) r.textContent = `−${fmtClock((auEl.duration || 0) - v)}`; } });
   $('#au').addEventListener('change', (e) => { if (e.target.matches('[data-au-seek]')) { auEl.currentTime = Number(e.target.value); AU.drag = false; auRender(); } });
 }
 function auClick(e) {
+  const um = e.target.closest('[data-au-unmark]'); if (um) { auMarkSet(auMarks().filter((m) => `${m.v}:${m.t}` !== um.dataset.auUnmark)); return auRender(); }
+  const mk = e.target.closest('[data-au-mark]'); if (mk) { const [v, s] = mk.dataset.auMark.split(':'); AU.list = false; if (v === AU.v && auEl.duration) { auEl.currentTime = Number(s); auEl.play().catch(() => {}); } else { auPosSave(); auLoad(v, Number(s), true); } return auRender(); }
   const b = e.target.closest('[data-au]'); if (!b) { const li = e.target.closest('[data-au-pick]'); if (li) { const v = li.dataset.auPick; AU.list = false; if (v === AU.v) auToggle(); else { auPosSave(); auLoad(v, 0, true); } auRender(); } return; }
   const k = b.dataset.au;
   if (k === 'play') auToggle(); else if (k === 'back') auSkip(-15); else if (k === 'fwd') auSkip(15);
   else if (k === 'prev') { if (auEl.currentTime > 4 || !auStep(-1)) { auEl.currentTime = 0; auRender(); } } else if (k === 'next') auStep(1);
   else if (k === 'speed') auSpeedCycle(); else if (k === 'sleep') auSleepCycle();
   else if (k === 'list') { AU.list = !AU.list; auRender(); }
+  else if (k === 'mark') auMarkAdd();
   else if (k === 'min') auMinimize(); else if (k === 'expand') auShow(); else if (k === 'stop') auStop();
 }
 function auBuild() {
@@ -4466,7 +4565,7 @@ function auBuild() {
   el.innerHTML = `${bgImg}<header class="au-top"><button type="button" class="au-ib" data-au="min" aria-label="${t('Minimize')}" title="${t('Minimize')}">${audioIco.down}</button><span class="au-eyebrow">${t('Audiobook')}</span><button type="button" class="au-ib" data-au="list" aria-label="${t('Chapters')}" title="${t('Chapters')}">${audioIco.list}</button></header>
     <div class="au-stage"><div class="au-cover">${coverArt(b)}</div>
     <h2 class="au-title">${esc(b.title)}</h2><p class="au-author">${esc(b.author || '')}</p><p class="au-chap" data-au-chap></p><p class="au-book" data-au-book></p></div>
-    <div class="au-seekbox"><input type="range" class="au-seek" data-au-seek min="0" max="1" step="1" value="0" aria-label="${t('Audiobook')}"><div class="au-times"><span data-au-cur>0:00</span><span data-au-left>−0:00</span></div></div>
+    <div class="au-seekbox"><div class="au-wave" data-au-wave aria-hidden="true"></div><input type="range" class="au-seek" data-au-seek min="0" max="1" step="1" value="0" aria-label="${t('Audiobook')}"><div class="au-times"><span data-au-cur>0:00</span><span data-au-left>−0:00</span></div></div>
     <div class="au-ctl">
       <button type="button" class="au-ib" data-au="prev" aria-label="${t('Previous chapter')}" title="${t('Previous chapter')}">${audioIco.prev}</button>
       <button type="button" class="au-ib big" data-au="back" aria-label="${t('Back 15 seconds')}" title="${t('Back 15 seconds')}">${audioIco.back}</button>
@@ -4474,7 +4573,7 @@ function auBuild() {
       <button type="button" class="au-ib big" data-au="fwd" aria-label="${t('Forward 15 seconds')}" title="${t('Forward 15 seconds')}">${audioIco.fwd}</button>
       <button type="button" class="au-ib" data-au="next" aria-label="${t('Next chapter')}" title="${t('Next chapter')}">${audioIco.next}</button>
     </div>
-    <div class="au-sub"><button type="button" class="au-chip" data-au="speed" data-au-speed></button><button type="button" class="au-chip" data-au="sleep" data-au-sleep>${audioIco.moon}<span></span></button><button type="button" class="au-chip" data-au="list">${audioIco.list}<span>${t('Chapters')}</span></button></div>
+    <div class="au-sub"><button type="button" class="au-chip" data-au="speed" data-au-speed></button><button type="button" class="au-chip" data-au="sleep" data-au-sleep>${audioIco.moon}<span></span></button><button type="button" class="au-chip" data-au="mark">${rdIco.mark}<span>${t('Bookmark')}</span></button><button type="button" class="au-chip" data-au="list">${audioIco.list}<span>${t('Chapters')}</span></button></div>
     <section class="au-list" data-au-list hidden aria-label="${t('Chapters')}"></section>`;
   $('#aumini').innerHTML = `<i class="aumini-bar" aria-hidden="true"><b data-aumini-bar></b></i><button type="button" class="aumini-main" data-au="expand" aria-label="${t('Audiobook')}: ${esc(b.title)}"><span class="aumini-cv" style="${hueStyle(b)}">${coverSrc(b) ? `<img src="${esc(coverSrc(b))}" alt="">` : `<i>${esc(bookInitials(b))}</i>`}</span><span class="aumini-tx"><b>${esc(b.title)}</b><small data-aumini-chap></small></span></button>
     <button type="button" class="au-ib" data-au="play" data-au-play aria-label="${t('Play')}"></button><button type="button" class="au-ib" data-au="stop" aria-label="${t('Close the player')}" title="${t('Close the player')}">${audioIco.close}</button>`;
@@ -4491,14 +4590,14 @@ function auRender() {
   const mc = $('#aumini [data-aumini-chap]'); if (mc) mc.textContent = AU.loading ? t('Loading…') : name;
   $$('[data-au-play]').forEach((p) => { p.innerHTML = AU.loading ? '<span class="au-spin" aria-hidden="true"></span>' : playing ? audioIco.pause : audioIco.play; const l = AU.loading ? t('Loading…') : playing ? t('Pause') : t('Play'); p.setAttribute('aria-label', l); p.title = l; p.classList.toggle('on', playing); });
   const sk = $('#au [data-au-seek]');
-  if (sk && !AU.drag) { sk.max = String(Math.max(1, Math.floor(dur))); sk.value = String(Math.floor(pos)); sk.style.setProperty('--p', `${dur ? Math.min(100, (pos / dur) * 100) : 0}%`); sk.setAttribute('aria-valuetext', `${fmtClock(pos)} / ${fmtClock(dur)}`); const c = $('#au [data-au-cur]'); if (c) c.textContent = fmtClock(pos); const r = $('#au [data-au-left]'); if (r) r.textContent = `−${fmtClock(Math.max(0, dur - pos))}`; }
+  if (sk && !AU.drag) { auWave(dur ? pos / dur : 0); sk.max = String(Math.max(1, Math.floor(dur))); sk.value = String(Math.floor(pos)); sk.style.setProperty('--p', `${dur ? Math.min(100, (pos / dur) * 100) : 0}%`); sk.setAttribute('aria-valuetext', `${fmtClock(pos)} / ${fmtClock(dur)}`); const c = $('#au [data-au-cur]'); if (c) c.textContent = fmtClock(pos); const r = $('#au [data-au-left]'); if (r) r.textContent = `−${fmtClock(Math.max(0, dur - pos))}`; }
   const sp = $('#au [data-au-speed]'); if (sp) { sp.textContent = `${AU.speed}×`; sp.setAttribute('aria-label', t('Speed {n}×', { n: AU.speed })); }
   const sl = $('#au [data-au-sleep] span'); if (sl) sl.textContent = AU.sleep ? (AU.sleep.opt === 'end' ? t('Sleep at chapter end') : t('Sleep in {n} min', { n: Math.max(1, Math.ceil((AU.sleep.at - Date.now()) / 60000)) })) : t('Sleep timer');
   const slb = $('#au [data-au-sleep]'); if (slb) slb.classList.toggle('on', !!AU.sleep);
   const pv = $('#au [data-au="prev"]'), nx = $('#au [data-au="next"]'); if (pv) pv.disabled = false; if (nx) nx.disabled = i >= tr.length - 1;
   const root = $('#au'); if (root) { root.classList.toggle('list-on', !!AU.list); root.classList.toggle('playing', playing); }
   const ls = $('#au [data-au-list]');
-  if (ls) { const wide = matchMedia('(min-width: 900px)').matches; ls.hidden = !AU.list && !wide; if (AU.list || wide) ls.innerHTML = tr.map((x, n) => `<button type="button" class="au-li${x.v === AU.v ? ' on' : ''}" data-au-pick="${x.v}"><span class="n">${x.v === AU.v && playing ? '<i class="au-eq" aria-hidden="true"><b></b><b></b><b></b></i>' : n < i ? '✓' : n + 1}</span><span class="tt">${esc(x.title || t('Chapter {n}', { n: n + 1 }))}</span><span class="d">${x.dur ? fmtClock(x.dur) : ''}</span></button>`).join(''); }
+  if (ls) { const wide = matchMedia('(min-width: 900px)').matches; ls.hidden = !AU.list && !wide; if (AU.list || wide) ls.innerHTML = tr.map((x, n) => `<button type="button" class="au-li${x.v === AU.v ? ' on' : ''}" data-au-pick="${x.v}"><span class="n">${x.v === AU.v && playing ? '<i class="au-eq" aria-hidden="true"><b></b><b></b><b></b></i>' : n < i ? '✓' : n + 1}</span><span class="tt">${esc(x.title || t('Chapter {n}', { n: n + 1 }))}</span><span class="d">${x.dur ? fmtClock(x.dur) : ''}</span></button>`).join('') + auMarksHtml(tr); }
   if ('mediaSession' in navigator) navigator.mediaSession.playbackState = playing ? 'playing' : 'paused';
 }
 function auMeta() {
@@ -4539,7 +4638,7 @@ function auOpen(b, v, opener) {
   auShow(); auLoad(start.v, start.t, true); auMeta();
 }
 auEl.addEventListener('timeupdate', () => { auRender(); if (Date.now() - AU.lastSave > 5000) { AU.lastSave = Date.now(); auPosSave(); } });
-['play', 'pause', 'playing', 'waiting', 'loadedmetadata'].forEach((ev) => auEl.addEventListener(ev, () => { if (ev === 'waiting') AU.loading = true; else if (ev === 'playing' || ev === 'loadedmetadata') AU.loading = false; auRender(); if (ev === 'pause') auPosSave(); }));
+['play', 'pause', 'playing', 'waiting', 'loadedmetadata'].forEach((ev) => auEl.addEventListener(ev, () => { if (ev === 'waiting') AU.loading = true; else if (ev === 'playing' || ev === 'loadedmetadata') AU.loading = false; auRender(); if (ev === 'pause') { AU.pausedAt = Date.now(); auPosSave(); } }));
 auEl.addEventListener('ended', () => {
   if (AU.sleep && AU.sleep.opt === 'end') { AU.sleep = null; auRender(); return; }
   if (!auStep(1)) { auRender(); try { const m = auPosAll(); delete m[`${auWho()}:${AU.b.id}`]; localStorage.setItem('audio-pos-v1', JSON.stringify(m)); } catch (_) { /* no storage */ } }
@@ -4583,6 +4682,160 @@ document.addEventListener('click', async (e) => {
   record('audio', b.enTitle, 'removed'); save(); renderAll(); toast(t('Chapter removed.'));
 });
 
+// ================================================================ The reader: a PDF opens inside the site, page by page, and remembers where you stopped
+const RD = { b: null, pdf: null, n: 0, zoom: 1, theme: 'light', page: 1, obs: null, opener: null, ratio: 1.414, seq: 0, raf: 0, marks: [] };
+const RD_THEMES = ['light', 'sepia', 'night'];
+const rdIco = {
+  back: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H5M11 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  mark: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h12v17l-6-4.5L6 21z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>',
+  markOn: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h12v17l-6-4.5L6 21z" fill="currentColor" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>',
+  theme: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M12 3.5v17a8.500 8.500 0 0 0 0-17z" fill="currentColor"/></svg>',
+  book: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h6.500a2 2 0 0 1 1.500 1.500V20a2 2 0 0 0-1.500-1H4zM20 5h-6.500A2 2 0 0 0 12 6.500V20a2 2 0 0 1 1.500-1H20z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>',
+};
+const rdKey = (b) => `${auWho()}:${b.id}`;
+const rdPosAll = () => { try { return JSON.parse(localStorage.getItem('ebook-pos-v1') || '{}') || {}; } catch (_) { return {}; } };
+const rdPosGet = (b) => { const p = rdPosAll()[rdKey(b)]; return p && b.ebook && p.v === b.ebook.v ? p : null; };
+function rdPosSave() {
+  if (!RD.b || !RD.n) return;
+  try { const m = rdPosAll(); m[rdKey(RD.b)] = { v: RD.b.ebook.v, page: RD.page, n: RD.n, marks: RD.marks.slice(0, 50), at: Date.now() }; localStorage.setItem('ebook-pos-v1', JSON.stringify(m)); } catch (_) { /* no storage */ }
+}
+let rdLibP = null;
+const rdLib = () => rdLibP || (rdLibP = new Promise((resolve, reject) => {
+  const s = document.createElement('script'); s.src = 'vendor/pdfjs/pdf.min.js';
+  s.onload = () => { if (!window.pdfjsLib) { rdLibP = null; return reject(new Error('lib')); } window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdfjs/pdf.worker.min.js'; resolve(window.pdfjsLib); };
+  s.onerror = () => { rdLibP = null; reject(new Error('lib')); };
+  document.head.appendChild(s);
+}));
+function rdEnsure() {
+  if ($('#rd')) return;
+  document.body.insertAdjacentHTML('beforeend', `<div id="rd" class="rd" role="dialog" aria-modal="true" hidden>
+    <header class="rd-top"><button type="button" class="rd-ib" data-rd="close" aria-label="${t('Close the book')}" title="${t('Close the book')}">${rdIco.back}</button>
+      <div class="rd-tt"><b data-rd-title></b><small data-rd-sub></small></div>
+      <button type="button" class="rd-ib" data-rd="mark" data-rd-mark aria-label="${t('Bookmark this page')}" title="${t('Bookmark this page')}">${rdIco.mark}</button>
+      <button type="button" class="rd-ib" data-rd="theme" aria-label="${t('Page colour')}" title="${t('Page colour')}">${rdIco.theme}</button>
+      <button type="button" class="rd-ib tx" data-rd="out" aria-label="${t('Smaller')}" title="${t('Smaller')}">A−</button>
+      <button type="button" class="rd-ib tx" data-rd="in" aria-label="${t('Larger')}" title="${t('Larger')}">A+</button></header>
+    <div class="rd-bar" aria-hidden="true"><i data-rd-bar></i></div>
+    <div class="rd-body" data-rd-body tabindex="0"><div class="rd-load" data-rd-load role="status"><span class="au-spin"></span><span>${t('Opening the book…')}</span></div><div class="rd-pages" data-rd-pages></div></div>
+    <footer class="rd-foot"><button type="button" class="rd-chip" data-rd="marks" data-rd-marks hidden></button><input type="range" class="rd-range" data-rd-range min="1" max="1" step="1" value="1" aria-label="${t('Page')}"><span class="rd-pn" data-rd-pn>1 / 1</span></footer></div>`);
+  const el = $('#rd');
+  el.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-rd]'); if (!b) return; const k = b.dataset.rd;
+    if (k === 'close') rdClose();
+    else if (k === 'theme') { RD.theme = RD_THEMES[(RD_THEMES.indexOf(RD.theme) + 1) % 3]; try { localStorage.setItem('ebook-theme-v1', RD.theme); } catch (_) { /* no storage */ } rdPaint(); }
+    else if (k === 'in' || k === 'out') rdZoom(k === 'in' ? 0.2 : -0.2);
+    else if (k === 'mark') { RD.marks = RD.marks.includes(RD.page) ? RD.marks.filter((p) => p !== RD.page) : [...RD.marks, RD.page].sort((x, y) => x - y); rdPosSave(); rdPaint(); }
+    else if (k === 'marks' && RD.marks.length) rdGo(RD.marks.find((p) => p > RD.page) || RD.marks[0]);
+  });
+  $('#rd [data-rd-range]').addEventListener('input', (e) => { $('#rd [data-rd-pn]').textContent = `${e.target.value} / ${RD.n}`; });
+  $('#rd [data-rd-range]').addEventListener('change', (e) => rdGo(Number(e.target.value)));
+  $('#rd [data-rd-body]').addEventListener('scroll', () => { if (!RD.raf) RD.raf = requestAnimationFrame(() => { RD.raf = 0; rdWhere(); }); }, { passive: true });
+}
+/** Colours, the page number, the bookmark and the progress line. */
+function rdPaint() {
+  const el = $('#rd'); if (!el || !RD.b) return;
+  el.dataset.theme = RD.theme;
+  $('#rd [data-rd-pn]').textContent = `${RD.page} / ${RD.n || 1}`;
+  const r = $('#rd [data-rd-range]'); r.max = String(RD.n || 1); r.value = String(RD.page);
+  $('#rd [data-rd-bar]').style.width = `${RD.n > 1 ? ((RD.page - 1) / (RD.n - 1)) * 100 : 0}%`;
+  const on = RD.marks.includes(RD.page), mk = $('#rd [data-rd-mark]'); mk.innerHTML = on ? rdIco.markOn : rdIco.mark; mk.classList.toggle('on', on); mk.setAttribute('aria-pressed', String(on));
+  const ms = $('#rd [data-rd-marks]'); ms.hidden = !RD.marks.length; ms.textContent = t('Bookmarks: {n}', { n: RD.marks.length });
+  $('#rd [data-rd-sub]').textContent = RD.n ? t('Page {a} of {b}', { a: RD.page, b: RD.n }) : '';
+}
+function rdWhere() {
+  const body = $('#rd [data-rd-body]'); if (!body || !RD.n) return;
+  const mid = body.scrollTop + body.clientHeight * 0.35, pages = $$('#rd .rd-pg');
+  let lo = 0, hi = pages.length - 1;
+  while (lo < hi) { const m = (lo + hi) >> 1; if (pages[m].offsetTop + pages[m].offsetHeight < mid) lo = m + 1; else hi = m; }
+  const p = lo + 1; if (p !== RD.page) { RD.page = p; rdPaint(); rdPosSave(); }
+}
+const rdGo = (p) => { const pg = $(`#rd .rd-pg[data-n="${Math.min(Math.max(1, p), RD.n)}"]`); if (pg) { $('#rd [data-rd-body]').scrollTop = pg.offsetTop - 8; rdWhere(); } };
+function rdZoom(d) {
+  const z = Math.min(2.4, Math.max(0.6, Math.round((RD.zoom + d) * 10) / 10)); if (z === RD.zoom) return;
+  const keep = RD.page; RD.zoom = z; $('#rd [data-rd-pages]').style.setProperty('--z', String(z));
+  $$('#rd .rd-pg canvas').forEach((c) => { c.width = 0; c.remove(); }); $$('#rd .rd-pg').forEach((pg) => { delete pg.dataset.done; });
+  rdGo(keep); rdWatch();
+}
+async function rdDraw(pg) {
+  if (pg.dataset.done || !RD.pdf) return; pg.dataset.done = '1'; const seq = RD.seq;
+  try {
+    const page = await RD.pdf.getPage(Number(pg.dataset.n)); if (seq !== RD.seq || !pg.isConnected) return;
+    const base = page.getViewport({ scale: 1 }), dpr = Math.min(2, window.devicePixelRatio || 1), vp = page.getViewport({ scale: (pg.clientWidth * dpr) / base.width });
+    const c = document.createElement('canvas'); c.width = Math.floor(vp.width); c.height = Math.floor(vp.height);
+    pg.style.aspectRatio = `${base.width} / ${base.height}`;
+    await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+    if (seq !== RD.seq || !pg.dataset.done) { c.width = 0; return; }
+    pg.querySelectorAll('canvas').forEach((x) => { x.width = 0; x.remove(); }); pg.appendChild(c);
+  } catch (_) { delete pg.dataset.done; }
+}
+/** Only the pages near the screen are drawn; the ones far away give their memory back. */
+function rdWatch() {
+  if (RD.obs) RD.obs.disconnect();
+  RD.obs = new IntersectionObserver((list) => list.forEach((en) => {
+    if (en.isIntersecting) rdDraw(en.target);
+    else if (en.target.dataset.done) { en.target.querySelectorAll('canvas').forEach((c) => { c.width = 0; c.remove(); }); delete en.target.dataset.done; }
+  }), { root: $('#rd [data-rd-body]'), rootMargin: '1400px 0px' });
+  $$('#rd .rd-pg').forEach((pg) => RD.obs.observe(pg));
+}
+function rdClose() {
+  if (!$('#rd') || $('#rd').hidden) return;
+  rdPosSave(); RD.seq++; if (RD.obs) RD.obs.disconnect(); RD.obs = null;
+  $$('#rd .rd-pg canvas').forEach((c) => { c.width = 0; }); $('#rd [data-rd-pages]').innerHTML = '';
+  if (RD.pdf) { try { RD.pdf.destroy(); } catch (_) { /* already gone */ } } RD.pdf = null; RD.b = null; RD.n = 0;
+  $('#rd').hidden = true; document.documentElement.classList.remove('rd-lock');
+  if (RD.opener && document.contains(RD.opener)) RD.opener.focus({ preventScroll: true });
+  setTimeout(audioShelves, 0);
+}
+/** Opens a book's PDF inside the site, at the page this person stopped on. Returns false when the reader itself cannot start, so the caller can fall back to a new tab. */
+async function rdOpen(b, url, opener) {
+  rdEnsure(); const seq = ++RD.seq; RD.b = b; RD.opener = opener || null; RD.n = 0; RD.page = 1;
+  const saved = rdPosGet(b); RD.marks = saved && Array.isArray(saved.marks) ? saved.marks.filter((p) => Number.isInteger(p) && p > 0) : [];
+  try { const th = localStorage.getItem('ebook-theme-v1'); if (RD_THEMES.includes(th)) RD.theme = th; } catch (_) { /* no storage */ }
+  const el = $('#rd'); el.hidden = false; document.documentElement.classList.add('rd-lock');
+  $('#rd [data-rd-title]').textContent = b.title; $('#rd [data-rd-pages]').innerHTML = ''; $('#rd [data-rd-load]').hidden = false; rdPaint();
+  $('#rd [data-rd="close"]').focus({ preventScroll: true });
+  let lib; try { lib = await rdLib(); } catch (_) { if (seq === RD.seq) { RD.b = null; el.hidden = true; document.documentElement.classList.remove('rd-lock'); } return false; }
+  try {
+    const pdf = await lib.getDocument({ url }).promise; if (seq !== RD.seq) { pdf.destroy(); return true; }
+    RD.pdf = pdf; RD.n = pdf.numPages;
+    const first = await pdf.getPage(1), v = first.getViewport({ scale: 1 }); if (seq !== RD.seq) return true;
+    RD.ratio = v.height / v.width;
+    $('#rd [data-rd-pages]').style.setProperty('--z', String(RD.zoom));
+    $('#rd [data-rd-pages]').innerHTML = Array.from({ length: RD.n }, (_, i) => `<div class="rd-pg" data-n="${i + 1}" style="aspect-ratio: ${v.width} / ${v.height}"><span class="rd-no">${i + 1}</span></div>`).join('');
+    $('#rd [data-rd-load]').hidden = true;
+    RD.page = saved && saved.page <= RD.n ? saved.page : 1; rdPaint(); rdGo(RD.page); rdWatch();
+    if (saved && saved.page > 1) toast(t('Continuing from page {n}.', { n: RD.page }));
+  } catch (_) {
+    if (seq !== RD.seq) return true;
+    rdClose(); toast(t('The PDF could not be opened right now. Try again in a minute.'));
+  }
+  return true;
+}
+document.addEventListener('keydown', (e) => {
+  if (!$('#rd') || $('#rd').hidden) return;
+  if (e.key === 'Escape') { e.preventDefault(); rdClose(); }
+  else if ((e.key === '+' || e.key === '=') && !e.ctrlKey && !e.metaKey) rdZoom(0.2);
+  else if (e.key === '-' && !e.ctrlKey && !e.metaKey) rdZoom(-0.2);
+});
+window.addEventListener('pagehide', rdPosSave);
+function ebookCard(b) {
+  const pr = rdPosGet(b), auth = !!ebookAuth();
+  const meta = pr && pr.n ? t('Page {a} of {b}', { a: pr.page, b: pr.n }) : `PDF · ${fmtSize(b.ebook.size || 0)}`;
+  return `<button type="button" class="aucard" ${auth ? `data-ebook-open="${b.id}"` : 'data-signin'} aria-label="${esc(b.title)}: ${auth ? (pr ? t('Continue reading') : t('Read PDF')) : t('Sign in to read the PDF')}">
+    <span class="aucard-cv">${coverArt(b)}<span class="aucard-play read">${rdIco.book}</span></span>
+    <span class="aucard-tx"><b>${esc(b.title)}</b><small>${esc(b.author || '')}</small><small class="aucard-meta">${meta}</small>${pr && pr.n > 1 ? `<i class="aucard-bar"><i style="width:${Math.round(((pr.page - 1) / (pr.n - 1)) * 100)}%"></i></i>` : ''}</span></button>`;
+}
+/** The e-book shelf: a row on the home page (what you were reading comes first) and a grid in Books under the PDF filter. */
+function ebookShelves() {
+  const home = $('#home-ebook'), cat = $('#cat-ebook'); if (!home || !cat) return;
+  const list = ebookOn() ? books.filter((b) => b.ebook) : [];
+  if (!list.length) { setHtml(home, ''); setHtml(cat, ''); return; }
+  const going = list.filter((b) => { const p = rdPosGet(b); return p && p.page > 1 && p.page < p.n; }).sort((x, y) => rdPosGet(y).at - rdPosGet(x).at);
+  const rest = list.filter((b) => !going.includes(b)).sort((x, y) => x.title.localeCompare(y.title)), all = [...going, ...rest];
+  setHtml(home, `<section class="aushelf"><div class="sec-head"><div><h2>${rdIco.book} ${going.length ? t('Continue reading') : t('E-books')}</h2><p>${t('Read right here, on any device. The book opens on the page where you stopped.')}</p></div>${list.length > 4 ? `<button type="button" class="btn small quiet" data-ebook-all>${t('See all')}</button>` : ''}</div><div class="aurow">${all.slice(0, 12).map(ebookCard).join('')}</div></section>`);
+  setHtml(cat, bd.filter === 'PDF' ? `<section class="aushelf"><div class="augrid">${all.map(ebookCard).join('')}</div></section>` : '');
+}
+document.addEventListener('click', (e) => { if (e.target.closest('[data-ebook-all]')) { bd.filter = 'PDF'; const go = $('[data-go="catalog"]'); if (go) go.click(); } });
 const snapshot = () => ({ people: students, books, copies, loans, reservations, requests, assignments, likes, log: activity, nextLoanId, seed, pinSeed, houseSeed, picRev });
 /** The lists a backup file or a saved copy may carry, old files included (they simply have fewer). */
 const pickData = (d) => ({ people: d.people, books: d.books, copies: d.copies, loans: d.loans, reservations: d.reservations, requests: d.requests, assignments: d.assignments, likes: d.likes, log: d.log, nextLoanId: d.nextLoanId, seed: d.seed, pinSeed: d.pinSeed, houseSeed: d.houseSeed, picRev: d.picRev });

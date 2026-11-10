@@ -176,6 +176,10 @@ Bilib qo‘ying:
 - Supabase bepul tarifida jami 1 GB joy bor.
 - Zaxira fayli (**Ma’lumotlar → Zaxira faylini saqlash**) PDF fayllarning o‘zini emas, faqat qaysi kitobda PDF borligini saqlaydi.
 
+### Sayt ichida o‘qish
+
+PDF endi yangi oynada emas, saytning o‘zida ochiladi: sahifa eslab qolinadi, xatcho‘p, uch xil sahifa rangi (oq, sepiya, tungi), kattalashtirish va sahifa surgichi bor. Buning uchun `vendor/pdfjs/` papkasida PDF.js (Mozilla, Apache-2.0) turadi; uni o‘chirmang. O‘quvchi ochilmasa, PDF avvalgidek brauzerning o‘zida ochiladi.
+
 ### Audiokitoblar
 
 Har bir kitobga bir nechta audio bob biriktirish mumkin; kitobxon **Tinglash** ni bosganda to‘liq ekranli pleyer ochiladi (muqova, 15 soniya orqaga/oldinga, tezlik, uyqu taymeri, boblar ro‘yxati, pastda kichik pleyer, qayerda to‘xtagan joyidan davom etish).
