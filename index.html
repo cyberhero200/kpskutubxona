@@ -1172,6 +1172,27 @@ html.au-lock, html.au-lock body { overflow: hidden; }
 .aumini-tx { min-width: 0; display: grid; } .aumini-tx b { font: 700 14px var(--font-ui); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .aumini-tx small { opacity: .75; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .aumini .au-ib svg { width: 22px; height: 22px; }
 #toast { z-index: 120; }
+.au-book { margin: 4px 0 0; font: 500 12px var(--font-ui); color: rgba(255,255,255,.75); min-height: 1.2em; }
+.aumini { overflow: hidden; }
+.aumini-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(255,255,255,.18); } .aumini-bar b { display: block; height: 3px; width: 0; background: var(--gold, #E2B04A); }
+.aushelf { margin-bottom: 26px; }
+.aushelf h2 svg { width: 22px; height: 22px; vertical-align: -3px; color: var(--accent); }
+.aurow { display: grid; grid-auto-flow: column; grid-auto-columns: min(42%, 168px); gap: 14px; overflow-x: auto; padding: 4px 2px 12px; scroll-snap-type: x proximity; scrollbar-width: thin; }
+.augrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 18px 14px; margin-bottom: 8px; }
+.aucard { display: flex; flex-direction: column; gap: 8px; padding: 0; border: 0; background: none; color: var(--fg); text-align: left; cursor: pointer; scroll-snap-align: start; font: inherit; min-width: 0; }
+.aucard-cv { position: relative; display: block; border-radius: 12px; overflow: hidden; aspect-ratio: 3 / 4; box-shadow: 0 8px 22px rgb(0 0 0 / .18); transition: transform .25s cubic-bezier(.22,1,.36,1), box-shadow .25s; }
+.aucard-cv .cv { width: 100%; height: 100%; aspect-ratio: auto; }
+.aucard:hover .aucard-cv, .aucard:focus-visible .aucard-cv { transform: translateY(-4px); box-shadow: 0 16px 34px rgb(0 0 0 / .28); }
+.aucard:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; border-radius: 12px; }
+.aucard-play { position: absolute; right: 8px; bottom: 8px; z-index: 3; width: 44px; height: 44px; border-radius: 50%; background: var(--gold, #E2B04A); color: #1a1405; display: grid; place-items: center; box-shadow: 0 4px 14px rgb(0 0 0 / .4); transition: transform .15s cubic-bezier(.34,1.56,.64,1); }
+.aucard:active .aucard-play { transform: scale(.9); }
+.aucard-play svg { width: 20px; height: 20px; }
+.aucard-tx { display: grid; gap: 2px; min-width: 0; }
+.aucard-tx b { font: 700 14px/1.25 var(--font-ui); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.aucard-tx small { font-size: 12px; opacity: .72; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.aucard-meta { font-weight: 600; opacity: .85 !important; }
+.aucard-bar { display: block; height: 4px; border-radius: 2px; background: color-mix(in srgb, var(--fg) 15%, transparent); margin-top: 4px; } .aucard-bar i { display: block; height: 4px; border-radius: 2px; background: var(--accent); }
+
 .au > .au-bg { position: absolute; inset: -40px; max-width: none; width: auto; z-index: 0; background-size: cover; background-position: center; filter: blur(46px) saturate(1.4); opacity: .55; transform: scale(1.15); pointer-events: none; }
 .au > * { z-index: 1; } .au > .au-bg { z-index: 0; }
 .au-cover { width: min(80vw, 360px, 46vh); transform: scale(.9); transition: transform .5s cubic-bezier(.2,.8,.2,1), box-shadow .5s; box-shadow: 0 18px 44px rgba(0,0,0,.45), 0 0 0 2px rgba(226,176,74,.7); }
@@ -1278,6 +1299,7 @@ html.au-lock, html.au-lock body { overflow: hidden; }
     <div id="home-top"></div>
     <div class="home-cols" id="home-cols">
       <div class="home-main">
+        <div id="home-audio"></div>
         <div id="home-shelves"></div>
         <div class="sec-head">
           <div><h2>Trending now</h2><p>The books being borrowed the most right now.</p></div>
@@ -1300,6 +1322,7 @@ html.au-lock, html.au-lock body { overflow: hidden; }
       <div class="filters" id="bd-filters" role="group" aria-label="Filter books"></div>
       <p class="hint" id="cat-count"></p>
     </div>
+    <div id="cat-audio"></div>
     <div class="cat-list" id="cat-body"></div>
     <div class="more" id="cat-more"></div>
     <p class="empty" id="bd-empty" hidden></p>
@@ -2641,6 +2664,13 @@ const UZ = {
   "Open PDF": "PDFni ochish",
   "Read PDF": "PDF o‘qish",
   "Audiobook": "Audiokitob",
+  "1 chapter": "1 bob",
+  "{h} h {m} min": "{h} soat {m} daq",
+  "{m} min": "{m} daq",
+  "Whole book: {p}% · {left} left": "Butun kitob: {p}% · {left} qoldi",
+  "{left} left": "{left} qoldi",
+  "Continue listening": "Tinglashni davom ettirish",
+  "Listen to books from the library, wherever you are.": "Kutubxona kitoblarini istalgan joyda tinglang.",
   "Audio": "Audio",
   "Audiobooks": "Audiokitoblar",
   "Listen": "Tinglash",
@@ -3581,6 +3611,13 @@ const RU = {
   "Open PDF": "Открыть PDF",
   "Read PDF": "Читать PDF",
   "Audiobook": "Аудиокнига",
+  "1 chapter": "1 глава",
+  "{h} h {m} min": "{h} ч {m} мин",
+  "{m} min": "{m} мин",
+  "Whole book: {p}% · {left} left": "Вся книга: {p}% · осталось {left}",
+  "{left} left": "осталось {left}",
+  "Continue listening": "Продолжить слушать",
+  "Listen to books from the library, wherever you are.": "Слушайте книги библиотеки где угодно.",
   "Audio": "Аудио",
   "Audiobooks": "Аудиокниги",
   "Listen": "Слушать",
@@ -4225,7 +4262,8 @@ const AUDIO_EXT = { mp3: 'audio/mpeg', m4a: 'audio/mp4', mp4: 'audio/mp4', aac: 
 let audioBusy = null;   // { id, a, b, pct } while chapters are going up
 const audioTracks = (b) => (b && b.audio && Array.isArray(b.audio.tracks) ? b.audio.tracks.filter((x) => x && x.v) : []);
 const fmtClock = (s) => { s = Math.max(0, Math.floor(Number(s) || 0)); const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60; return h ? `${h}:${String(m).padStart(2, '0')}:${String(x).padStart(2, '0')}` : `${m}:${String(x).padStart(2, '0')}`; };
-const fmtLong = (s) => { s = Math.round((Number(s) || 0) / 60); return s >= 60 ? `${Math.floor(s / 60)} h ${s % 60} min` : `${Math.max(1, s)} min`; };
+const fmtLong = (s) => { s = Math.round((Number(s) || 0) / 60); return s >= 60 ? t('{h} h {m} min', { h: Math.floor(s / 60), m: s % 60 }) : t('{m} min', { m: Math.max(1, s) }); };
+const auCh = (n) => (n === 1 ? t('1 chapter') : t('{n} chapters', { n }));
 const audioTotal = (b) => audioTracks(b).reduce((n, x) => n + (Number(x.dur) || 0), 0);
 const audioIco = {
   play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.2v13.6a1 1 0 0 0 1.5.86l11-6.8a1 1 0 0 0 0-1.72l-11-6.8A1 1 0 0 0 8 5.2z" fill="currentColor"/></svg>',
@@ -4244,7 +4282,7 @@ const audioIco = {
 function audioRow(b) {
   const tr = audioTracks(b);
   if (!tr.length || !ebookOn()) return '';
-  const info = `${t('{n} chapters', { n: tr.length })}${audioTotal(b) ? ` · ${fmtLong(audioTotal(b))}` : ''}`;
+  const info = `${auCh(tr.length)}${audioTotal(b) ? ` · ${fmtLong(audioTotal(b))}` : ''}`;
   return `<span class="ebook-row"><span class="pill audio-pill">${audioIco.head}${t('Audiobook')}</span><span class="audio-info">${info}</span>${ebookAuth()
     ? `<button type="button" class="btn small" data-audio-open="${b.id}">${t('Listen')}</button>`
     : `<button type="button" class="btn small" data-signin>${t('Sign in to listen')}</button>`}</span>`;
@@ -4263,7 +4301,7 @@ function audioTools(b) {
       <button type="button" class="btn small ico" data-audio-drop="${b.id}:${x.v}" aria-label="${t('Remove chapter')}" title="${t('Remove chapter')}">✕</button>
     </li>`).join('');
   return `<div class="audio-tools">
-    <div class="audio-head"><b>${t('Audiobook chapters')}</b>${tr.length ? `<span class="muted">${t('{n} chapters', { n: tr.length })}${audioTotal(b) ? ` · ${fmtLong(audioTotal(b))}` : ''}</span>` : ''}</div>
+    <div class="audio-head"><b>${t('Audiobook chapters')}</b>${tr.length ? `<span class="muted">${auCh(tr.length)}${audioTotal(b) ? ` · ${fmtLong(audioTotal(b))}` : ''}</span>` : ''}</div>
     ${tr.length ? `<ol class="audio-list">${rows}</ol>` : ''}
     ${busy ? `<span class="ebook-prog" data-audio-prog role="status">${t('Uploading chapter {a} of {b}… {n}%', { a: audioBusy.a, b: audioBusy.b, n: audioBusy.pct })}</span>`
       : `<label class="btn small">${t('Add audio chapters')}<input type="file" multiple accept="audio/*,.mp3,.m4a,.aac,.ogg,.opus,.wav,.flac" hidden data-audio-file="${b.id}"></label>`}
@@ -4317,12 +4355,39 @@ async function audioUpload(b, files) {
     }
   }
   audioBusy = null;
-  if (ok) { record('audio', b.enTitle, `${t('{n} chapters', { n: ok })} · ${audioTracks(b).length}`.slice(0, 200)); toast(t('Audio saved for “{title}”.', { title: b.title })); }
+  if (ok) { record('audio', b.enTitle, `${auCh(ok)} · ${audioTracks(b).length}`.slice(0, 200)); toast(t('Audio saved for “{title}”.', { title: b.title })); }
   renderAll();
 }
 
+/** How far this person is through a whole audiobook, from the place they last stopped. */
+function audioProgress(b) {
+  const tr = audioTracks(b), saved = auPosGet(b), tot = audioTotal(b); if (!saved || !tot) return null;
+  const i = tr.findIndex((x) => x.v === saved.v); if (i < 0) return null;
+  const done = tr.slice(0, i).reduce((n, x) => n + (Number(x.dur) || 0), 0) + (Number(saved.t) || 0);
+  return { pct: Math.min(100, Math.round((done / tot) * 100)), left: Math.max(0, tot - done), chap: i + 1, at: saved.at || 0 };
+}
+function audioCard(b) {
+  const tr = audioTracks(b), pr = audioProgress(b), auth = !!ebookAuth();
+  const meta = pr ? t('Chapter {n}', { n: pr.chap }) + ' · ' + t('{left} left', { left: fmtLong(pr.left) }) : `${auCh(tr.length)}${audioTotal(b) ? ` · ${fmtLong(audioTotal(b))}` : ''}`;
+  return `<button type="button" class="aucard" ${auth ? `data-audio-open="${b.id}"` : 'data-signin'} aria-label="${esc(b.title)}: ${auth ? (pr ? t('Continue listening') : t('Listen')) : t('Sign in to listen')}">
+    <span class="aucard-cv">${coverArt(b)}<span class="aucard-play">${audioIco.play}</span></span>
+    <span class="aucard-tx"><b>${esc(b.title)}</b><small>${esc(b.author || '')}</small><small class="aucard-meta">${meta}</small>${pr ? `<i class="aucard-bar"><i style="width:${pr.pct}%"></i></i>` : ''}</span></button>`;
+}
+/** The audiobook shelf: on the home page as a row (what you were listening to comes first), and as a grid at the top of Books when the Audiobooks filter is on. */
+function audioShelves() {
+  const home = $('#home-audio'), cat = $('#cat-audio'); if (!home || !cat) return;
+  const list = ebookOn() ? books.filter((b) => audioTracks(b).length) : [];
+  if (!list.length) { setHtml(home, ''); setHtml(cat, ''); return; }
+  const withPr = list.map((b) => ({ b, pr: audioProgress(b) }));
+  const going = withPr.filter((x) => x.pr && x.pr.pct < 100).sort((x, y) => y.pr.at - x.pr.at).map((x) => x.b);
+  const rest = withPr.filter((x) => !going.includes(x.b)).map((x) => x.b).sort((x, y) => x.title.localeCompare(y.title));
+  const row = [...going, ...rest].slice(0, 12);
+  setHtml(home, `<section class="aushelf"><div class="sec-head"><div><h2>${audioIco.head} ${going.length ? t('Continue listening') : t('Audiobooks')}</h2><p>${t('Listen to books from the library, wherever you are.')}</p></div>${list.length > 4 ? `<button type="button" class="btn small quiet" data-audio-all>${t('See all')}</button>` : ''}</div><div class="aurow">${row.map(audioCard).join('')}</div></section>`);
+  setHtml(cat, bd.filter === 'AUDIO' ? `<section class="aushelf"><div class="augrid">${[...going, ...rest].map(audioCard).join('')}</div></section>` : '');
+}
+document.addEventListener('click', (e) => { if (e.target.closest('[data-audio-all]')) { bd.filter = 'AUDIO'; const go = $('[data-go="catalog"]'); if (go) go.click(); } });
 // ---------------------------------------------------------------- the player
-const AU = { b: null, v: null, open: false, speed: 1, sleep: null, sleepT: 0, urls: new Map(), lastSave: 0, opener: null, drag: false, list: false, loading: false };
+const AU = { b: null, v: null, open: false, speed: (() => { try { const s = Number(localStorage.getItem('audio-speed-v1')); return [0.75, 1, 1.25, 1.5, 1.75, 2].includes(s) ? s : 1; } catch (_) { return 1; } })(), sleep: null, sleepT: 0, urls: new Map(), lastSave: 0, opener: null, drag: false, list: false, loading: false };
 const auEl = new Audio(); auEl.preload = 'metadata';
 const AU_SPEEDS = [0.75, 1, 1.25, 1.5, 1.75, 2], AU_SLEEP = [null, 15, 30, 45, 60, 'end'];
 const auWho = () => (me && me.id ? `r${me.id}` : 'desk');
@@ -4377,7 +4442,7 @@ function auSleepCycle() {
   if (n) { AU.sleep = { opt: n, at: n === 'end' ? 0 : Date.now() + n * 60000 }; if (n !== 'end') AU.sleepT = setTimeout(() => { auEl.pause(); AU.sleep = null; auRender(); }, n * 60000); }
   auRender();
 }
-function auSpeedCycle() { AU.speed = AU_SPEEDS[(AU_SPEEDS.indexOf(AU.speed) + 1) % AU_SPEEDS.length]; auEl.playbackRate = AU.speed; auRender(); }
+function auSpeedCycle() { AU.speed = AU_SPEEDS[(AU_SPEEDS.indexOf(AU.speed) + 1) % AU_SPEEDS.length]; auEl.playbackRate = AU.speed; try { localStorage.setItem('audio-speed-v1', String(AU.speed)); } catch (_) { /* no storage */ } auRender(); }
 function auEnsure() {
   if ($('#au')) return;
   document.body.insertAdjacentHTML('beforeend', `<div id="au" class="au" role="dialog" aria-modal="true" hidden></div><div id="aumini" class="aumini" hidden></div>`);
@@ -4400,7 +4465,7 @@ function auBuild() {
   const bgImg = coverSrc(b) && !/^\s*$/.test(coverSrc(b)) ? `<div class="au-bg" aria-hidden="true" style="background-image:url('${esc(coverSrc(b))}')"></div>` : '<div class="au-bg" aria-hidden="true"></div>';
   el.innerHTML = `${bgImg}<header class="au-top"><button type="button" class="au-ib" data-au="min" aria-label="${t('Minimize')}" title="${t('Minimize')}">${audioIco.down}</button><span class="au-eyebrow">${t('Audiobook')}</span><button type="button" class="au-ib" data-au="list" aria-label="${t('Chapters')}" title="${t('Chapters')}">${audioIco.list}</button></header>
     <div class="au-stage"><div class="au-cover">${coverArt(b)}</div>
-    <h2 class="au-title">${esc(b.title)}</h2><p class="au-author">${esc(b.author || '')}</p><p class="au-chap" data-au-chap></p></div>
+    <h2 class="au-title">${esc(b.title)}</h2><p class="au-author">${esc(b.author || '')}</p><p class="au-chap" data-au-chap></p><p class="au-book" data-au-book></p></div>
     <div class="au-seekbox"><input type="range" class="au-seek" data-au-seek min="0" max="1" step="1" value="0" aria-label="${t('Audiobook')}"><div class="au-times"><span data-au-cur>0:00</span><span data-au-left>−0:00</span></div></div>
     <div class="au-ctl">
       <button type="button" class="au-ib" data-au="prev" aria-label="${t('Previous chapter')}" title="${t('Previous chapter')}">${audioIco.prev}</button>
@@ -4411,7 +4476,7 @@ function auBuild() {
     </div>
     <div class="au-sub"><button type="button" class="au-chip" data-au="speed" data-au-speed></button><button type="button" class="au-chip" data-au="sleep" data-au-sleep>${audioIco.moon}<span></span></button><button type="button" class="au-chip" data-au="list">${audioIco.list}<span>${t('Chapters')}</span></button></div>
     <section class="au-list" data-au-list hidden aria-label="${t('Chapters')}"></section>`;
-  $('#aumini').innerHTML = `<button type="button" class="aumini-main" data-au="expand" aria-label="${t('Audiobook')}: ${esc(b.title)}"><span class="aumini-cv" style="${hueStyle(b)}">${coverSrc(b) ? `<img src="${esc(coverSrc(b))}" alt="">` : `<i>${esc(bookInitials(b))}</i>`}</span><span class="aumini-tx"><b>${esc(b.title)}</b><small data-aumini-chap></small></span></button>
+  $('#aumini').innerHTML = `<i class="aumini-bar" aria-hidden="true"><b data-aumini-bar></b></i><button type="button" class="aumini-main" data-au="expand" aria-label="${t('Audiobook')}: ${esc(b.title)}"><span class="aumini-cv" style="${hueStyle(b)}">${coverSrc(b) ? `<img src="${esc(coverSrc(b))}" alt="">` : `<i>${esc(bookInitials(b))}</i>`}</span><span class="aumini-tx"><b>${esc(b.title)}</b><small data-aumini-chap></small></span></button>
     <button type="button" class="au-ib" data-au="play" data-au-play aria-label="${t('Play')}"></button><button type="button" class="au-ib" data-au="stop" aria-label="${t('Close the player')}" title="${t('Close the player')}">${audioIco.close}</button>`;
 }
 /** Draws everything that changes while listening: times, the play button, the chapter name, the speed and the sleep timer. */
@@ -4420,6 +4485,9 @@ function auRender() {
   const tr = auTracks(), i = auIndex(), cur = tr[i], playing = !auEl.paused && !auEl.ended, dur = auEl.duration || (cur && cur.dur) || 0, pos = auEl.currentTime || 0;
   const name = cur ? `${t('Chapter {n}', { n: i + 1 })}${cur.title && !/^(chapter|bob|глава)\b/i.test(cur.title) ? ` · ${cur.title}` : ''}` : '';
   const chap = $('#au [data-au-chap]'); if (chap) chap.textContent = `${name}${tr.length > 1 ? ` — ${t('{a} of {b}', { a: i + 1, b: tr.length })}` : ''}`;
+  const tot = audioTotal(AU.b), bk = $('#au [data-au-book]');
+  if (bk) { const done = tr.slice(0, i).reduce((n, x) => n + (Number(x.dur) || 0), 0) + pos; bk.textContent = tot > 0 && tr.length > 1 ? t('Whole book: {p}% · {left} left', { p: Math.min(100, Math.round((done / tot) * 100)), left: fmtLong(Math.max(0, tot - done)) }) : ''; }
+  const mb = $('#aumini [data-aumini-bar]'); if (mb) mb.style.width = `${dur ? Math.min(100, (pos / dur) * 100) : 0}%`;
   const mc = $('#aumini [data-aumini-chap]'); if (mc) mc.textContent = AU.loading ? t('Loading…') : name;
   $$('[data-au-play]').forEach((p) => { p.innerHTML = AU.loading ? '<span class="au-spin" aria-hidden="true"></span>' : playing ? audioIco.pause : audioIco.play; const l = AU.loading ? t('Loading…') : playing ? t('Pause') : t('Play'); p.setAttribute('aria-label', l); p.title = l; p.classList.toggle('on', playing); });
   const sk = $('#au [data-au-seek]');
@@ -4430,7 +4498,7 @@ function auRender() {
   const pv = $('#au [data-au="prev"]'), nx = $('#au [data-au="next"]'); if (pv) pv.disabled = false; if (nx) nx.disabled = i >= tr.length - 1;
   const root = $('#au'); if (root) { root.classList.toggle('list-on', !!AU.list); root.classList.toggle('playing', playing); }
   const ls = $('#au [data-au-list]');
-  if (ls) { const wide = matchMedia('(min-width: 900px)').matches; ls.hidden = !AU.list && !wide; if (AU.list || wide) ls.innerHTML = tr.map((x, n) => `<button type="button" class="au-li${x.v === AU.v ? ' on' : ''}" data-au-pick="${x.v}"><span class="n">${x.v === AU.v && playing ? '<i class="au-eq" aria-hidden="true"><b></b><b></b><b></b></i>' : n + 1}</span><span class="tt">${esc(x.title || t('Chapter {n}', { n: n + 1 }))}</span><span class="d">${x.dur ? fmtClock(x.dur) : ''}</span></button>`).join(''); }
+  if (ls) { const wide = matchMedia('(min-width: 900px)').matches; ls.hidden = !AU.list && !wide; if (AU.list || wide) ls.innerHTML = tr.map((x, n) => `<button type="button" class="au-li${x.v === AU.v ? ' on' : ''}" data-au-pick="${x.v}"><span class="n">${x.v === AU.v && playing ? '<i class="au-eq" aria-hidden="true"><b></b><b></b><b></b></i>' : n < i ? '✓' : n + 1}</span><span class="tt">${esc(x.title || t('Chapter {n}', { n: n + 1 }))}</span><span class="d">${x.dur ? fmtClock(x.dur) : ''}</span></button>`).join(''); }
   if ('mediaSession' in navigator) navigator.mediaSession.playbackState = playing ? 'playing' : 'paused';
 }
 function auMeta() {
@@ -4448,10 +4516,12 @@ function auShow() {
   const p = $('#au .au-play'); if (p) p.focus({ preventScroll: true });
 }
 function auMinimize() {
+  setTimeout(audioShelves, 0);
   AU.open = false; $('#au').hidden = true; document.documentElement.classList.remove('au-lock'); if (AU.b) $('#aumini').hidden = false;
   auPosSave(); if (AU.opener && document.contains(AU.opener)) AU.opener.focus({ preventScroll: true });
 }
 function auStop() {
+  setTimeout(audioShelves, 0);
   auEl.pause(); auPosSave(); AU.b = null; AU.v = null; AU.open = false; AU.list = false; clearTimeout(AU.sleepT); AU.sleep = null;
   if ($('#au')) { $('#au').hidden = true; $('#aumini').hidden = true; } document.documentElement.classList.remove('au-lock');
   auEl.removeAttribute('src'); auEl.load();
@@ -6360,6 +6430,7 @@ function bdRender(animate) {
   setHtml($('#home-shelves'), (reader ? shelfRow(t('Recommended for you'), recommended(reader), `<button type="button" class="btn small quiet" data-go="catalog">${t('See all')}</button>`) : '') + shelfRow(t('Featured'), featured(reader)));
   const side = $('#home-side'); side.hidden = !reader; side.classList.toggle('anim', !!animate); $('#view-board').classList.toggle('two', !!reader);
   setHtml(side, reader ? feedHtml(reader) : '');
+  audioShelves();
   const trend = trendingBooks(3), trendIds = new Set(trend.map((x) => x.a.book.id));
   $('#bd-trend').innerHTML = trend.length ? trend.map(({ a }, i) => {
     const reading = a.borrowed, waiting = a.holds;
@@ -6382,6 +6453,7 @@ function bdRender(animate) {
 }
 /** Books: every title, how many copies there are, how many are on the shelf, who has the rest. */
 function catRender(animate) {
+  audioShelves();
   const all = ix().sorted.map(titleAvailability);
   const counts = { ALL: all.length, IN: all.filter((a) => a.available > 0).length, OUT: all.filter((a) => a.total > 0 && a.available === 0).length };
   const isFresh = (b) => !!b.addedOn && diffDays(today(), b.addedOn) <= 30;
