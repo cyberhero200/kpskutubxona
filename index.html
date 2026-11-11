@@ -2703,6 +2703,15 @@ const UZ = {
   "Open PDF": "PDFni ochish",
   "Read PDF": "PDF o‘qish",
   "Audiobook": "Audiokitob",
+  "Your desk session has ended. Lock the desk, sign in again and retry.": "Kutubxonachi sessiyasi tugagan. Panelni qulflab, qaytadan kiring va yana urinib ko‘ring.",
+  "Storage did not answer. Check SUPABASE_URL in Netlify: it must look like https://xxxx.supabase.co": "Ombor javob bermadi. Netlify’dagi SUPABASE_URL ni tekshiring: u https://xxxx.supabase.co ko‘rinishida bo‘lishi kerak.",
+  "Storage refused the key. SUPABASE_SERVICE_KEY in Netlify must be the service_role (secret) key of the same project.": "Ombor kalitni qabul qilmadi. Netlify’dagi SUPABASE_SERVICE_KEY shu loyihaning service_role (secret) kaliti bo‘lishi kerak.",
+  "The Supabase project is paused or out of space. Open it at supabase.com.": "Supabase loyihasi to‘xtatilgan yoki joy tugagan. supabase.com’da ochib ko‘ring.",
+  "Storage answered with an error (code {n}). Try again in a minute.": "Ombor xato qaytardi (kod {n}). Bir daqiqadan so‘ng qayta urining.",
+  "The file did not reach storage. Check the internet, or a filter on this network may be blocking supabase.co.": "Fayl omborga yetib bormadi. Internetni tekshiring; bu tarmoqda supabase.co bloklangan bo‘lishi ham mumkin.",
+  "Storage says the file is too large.": "Ombor faylni juda katta deb rad etdi.",
+  "Storage did not accept the file (code {n}).": "Ombor faylni qabul qilmadi (kod {n}).",
+  "The site server answered with an error (code {n}). Try again in a minute.": "Sayt serveri xato qaytardi (kod {n}). Bir daqiqadan so‘ng qayta urining.",
   "Close the book": "Kitobni yopish",
   "Bookmark this page": "Sahifaga xatcho‘p qo‘yish",
   "Page colour": "Sahifa rangi",
@@ -3667,6 +3676,15 @@ const RU = {
   "Open PDF": "Открыть PDF",
   "Read PDF": "Читать PDF",
   "Audiobook": "Аудиокнига",
+  "Your desk session has ended. Lock the desk, sign in again and retry.": "Сеанс библиотекаря истёк. Заблокируйте панель, войдите снова и повторите.",
+  "Storage did not answer. Check SUPABASE_URL in Netlify: it must look like https://xxxx.supabase.co": "Хранилище не ответило. Проверьте SUPABASE_URL в Netlify: он должен выглядеть как https://xxxx.supabase.co",
+  "Storage refused the key. SUPABASE_SERVICE_KEY in Netlify must be the service_role (secret) key of the same project.": "Хранилище отклонило ключ. SUPABASE_SERVICE_KEY в Netlify должен быть ключом service_role (secret) этого же проекта.",
+  "The Supabase project is paused or out of space. Open it at supabase.com.": "Проект Supabase приостановлен или закончилось место. Откройте его на supabase.com.",
+  "Storage answered with an error (code {n}). Try again in a minute.": "Хранилище вернуло ошибку (код {n}). Повторите через минуту.",
+  "The file did not reach storage. Check the internet, or a filter on this network may be blocking supabase.co.": "Файл не дошёл до хранилища. Проверьте интернет; возможно, в этой сети заблокирован supabase.co.",
+  "Storage says the file is too large.": "Хранилище отклонило файл как слишком большой.",
+  "Storage did not accept the file (code {n}).": "Хранилище не приняло файл (код {n}).",
+  "The site server answered with an error (code {n}). Try again in a minute.": "Сервер сайта вернул ошибку (код {n}). Повторите через минуту.",
   "Close the book": "Закрыть книгу",
   "Bookmark this page": "Закладка на этой странице",
   "Page colour": "Цвет страницы",
@@ -4240,6 +4258,21 @@ const EBOOK_MB = 50;
 const ebookOn = () => !!API;
 const fmtSize = (n) => (n >= 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
 let ebookBusy = null;   // { id, pct } while a file is going up
+/** Says in plain words why a file did not reach storage, so the librarian knows what to fix. The technical detail goes to the console. */
+function storageWhy(err, fallback) {
+  console.warn('storage upload failed:', err && err.message, err && { http: err.http, why: err.why, at: err.at, sb: err.sb, body: err.body });
+  if (!err) return fallback;
+  if (err.http === 401 || err.code === 'auth') return t('Your desk session has ended. Lock the desk, sign in again and retry.');
+  if (err.code === 'storage' && err.why === 'url') return t('Storage did not answer. Check SUPABASE_URL in Netlify: it must look like https://xxxx.supabase.co');
+  if (err.code === 'storage' && err.why === 'key') return t('Storage refused the key. SUPABASE_SERVICE_KEY in Netlify must be the service_role (secret) key of the same project.');
+  if (err.code === 'storage' && err.why === 'paused') return t('The Supabase project is paused or out of space. Open it at supabase.com.');
+  if (err.code === 'storage') return t('Storage answered with an error (code {n}). Try again in a minute.', { n: err.sb || err.http || 0 });
+  if (err.code === 'put' && err.sb === 0) return t('The file did not reach storage. Check the internet, or a filter on this network may be blocking supabase.co.');
+  if (err.code === 'put' && err.sb === 413) return t('Storage says the file is too large.');
+  if (err.code === 'put') return t('Storage did not accept the file (code {n}).', { n: err.sb });
+  if (err.http >= 500) return t('The site server answered with an error (code {n}). Try again in a minute.', { n: err.http });
+  return fallback;
+}
 /** Who is asking: the desk (full view) or a signed-in reader. Null when nobody is signed in. */
 const ebookAuth = () => (remote.view === 'full' && remote.token ? { authorization: `Bearer ${remote.token}` } : me && me.token ? { authorization: `Reader ${me.token}` } : null);
 /** In the book list: "PDF" and a button to read it (or to sign in first). */
@@ -4273,7 +4306,7 @@ async function ebookUpload(b, file) {
   try {
     const res = await fetch(`${API}/ebook?id=${b.id}`, { method: 'POST', headers: { authorization: `Bearer ${remote.token}`, 'content-type': 'application/json' }, body: JSON.stringify({ size: file.size, name: file.name }) });
     grant = await res.json().catch(() => ({}));
-    if (!res.ok) throw Object.assign(new Error(grant.error || 'storage'), { code: grant.error });
+    if (!res.ok) throw Object.assign(new Error(grant.error || 'storage'), { code: grant.error, http: res.status, why: grant.why, at: grant.step, sb: grant.code });
     await new Promise((resolve, reject) => {
       const x = new XMLHttpRequest(), form = new FormData();
       form.append('cacheControl', '3600'); form.append('', file);
@@ -4284,13 +4317,13 @@ async function ebookUpload(b, file) {
         ebookBusy.pct = Math.min(99, Math.round((ev.loaded / ev.total) * 100));
         $$('[data-ebook-prog]').forEach((el) => { el.textContent = t('Uploading… {n}%', { n: ebookBusy.pct }); });
       };
-      x.onload = () => (x.status >= 200 && x.status < 300 ? resolve() : reject(new Error(`upload ${x.status}`)));
-      x.onerror = () => reject(new Error('network'));
+      x.onload = () => (x.status >= 200 && x.status < 300 ? resolve() : reject(Object.assign(new Error(`upload ${x.status}`), { code: 'put', sb: x.status, body: String(x.responseText || '').slice(0, 200) })));
+      x.onerror = () => reject(Object.assign(new Error('network'), { code: 'put', sb: 0 }));
       x.send(form);
     });
   } catch (err) {
     ebookBusy = null; renderAll();
-    return toast(err.code === 'no-storage' ? t('PDF storage is not connected yet. See the setup steps in the README.') : err.code === 'size' ? t('The PDF is larger than {n} MB.', { n: EBOOK_MB }) : t('The PDF could not be uploaded. Check the internet and try again.'));
+    return toast(err.code === 'no-storage' ? t('PDF storage is not connected yet. See the setup steps in the README.') : err.code === 'size' ? t('The PDF is larger than {n} MB.', { n: EBOOK_MB }) : storageWhy(err, t('The PDF could not be uploaded. Check the internet and try again.')));
   }
   const old = b.ebook;
   b.ebook = { v: grant.v, name: file.name.slice(0, 120), size: file.size, at: new Date().toISOString().slice(0, 10) };
@@ -4402,7 +4435,7 @@ async function audioUpload(b, files) {
       const dur = await audioDuration(file);
       const res = await fetch(`${API}/audio?id=${b.id}`, { method: 'POST', headers: { authorization: `Bearer ${remote.token}`, 'content-type': 'application/json' }, body: JSON.stringify({ size: file.size, name: file.name }) });
       const grant = await res.json().catch(() => ({}));
-      if (!res.ok) throw Object.assign(new Error(grant.error || 'storage'), { code: grant.error });
+      if (!res.ok) throw Object.assign(new Error(grant.error || 'storage'), { code: grant.error, http: res.status, why: grant.why, at: grant.step, sb: grant.code });
       const typed = file.type && /^audio\//.test(file.type) ? file : new File([file], file.name, { type: audioType(file) });
       await new Promise((resolve, reject) => {
         const x = new XMLHttpRequest(), form = new FormData();
@@ -4414,8 +4447,8 @@ async function audioUpload(b, files) {
           audioBusy.pct = Math.min(99, Math.round((ev.loaded / ev.total) * 100));
           $$('[data-audio-prog]').forEach((el) => { el.textContent = t('Uploading chapter {a} of {b}… {n}%', audioBusy); });
         };
-        x.onload = () => (x.status >= 200 && x.status < 300 ? resolve() : reject(new Error(`upload ${x.status}`)));
-        x.onerror = () => reject(new Error('network'));
+        x.onload = () => (x.status >= 200 && x.status < 300 ? resolve() : reject(Object.assign(new Error(`upload ${x.status}`), { code: 'put', sb: x.status, body: String(x.responseText || '').slice(0, 200) })));
+        x.onerror = () => reject(Object.assign(new Error('network'), { code: 'put', sb: 0 }));
         x.send(form);
       });
       if (!b.audio || !Array.isArray(b.audio.tracks)) b.audio = { tracks: [] };
@@ -4423,7 +4456,7 @@ async function audioUpload(b, files) {
       b.audio.at = new Date().toISOString().slice(0, 10); ok++;
       save();
     } catch (err) {
-      toast(err.code === 'no-storage' ? t('Audio storage is not connected yet. See the setup steps in the README.') : err.code === 'size' ? t('The chapter is larger than {n} MB. Split it into shorter parts.', { n: AUDIO_MB }) : t('The audio could not be uploaded. Check the internet and try again.'));
+      toast(err.code === 'no-storage' ? t('Audio storage is not connected yet. See the setup steps in the README.') : err.code === 'size' ? t('The chapter is larger than {n} MB. Split it into shorter parts.', { n: AUDIO_MB }) : storageWhy(err, t('The audio could not be uploaded. Check the internet and try again.')));
       break;
     }
   }

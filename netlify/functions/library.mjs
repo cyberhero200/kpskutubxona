@@ -39,7 +39,7 @@ const WAIT_SECONDS = 30;              // kept short: a whole school often shares
 const PUBLIC_CACHE_SECONDS = 10;      // how long Netlify's CDN may reuse the public answer
 const READER_DAYS = 90;               // how long a reader stays signed in on a device
 const ZONE_HOURS = 5;                 // the school's clock: Asia/Samarkand, UTC+5, no daylight saving
-const SERVER_VER = 12;                 // raise with every change the page relies on: the desk warns when the page is newer than this file
+const SERVER_VER = 13;                 // raise with every change the page relies on: the desk warns when the page is newer than this file
 const JOURNAL = 1000;                 // how many recent steps are remembered for a desk that saves late (likes are steps too)
 const COVER_BYTES = 200_000;          // a cover picture is a small JPEG the page has already cut to size
 const AVATAR_BYTES = 80_000;          // a profile picture: 320 x 320, cut by the page
@@ -2274,16 +2274,27 @@ const ebookPath = (id, v) => `book-${id}-${v}.pdf`;
 const ebookUrl = (cfg, link) => (/^https?:\/\//.test(link) ? link : `${cfg.url}${link.startsWith('/') ? '' : '/'}${link}`);
 let ebookBucketReady = false;
 async function sb(cfg, method, path, body) {
-  const res = await fetch(`${cfg.url}${path}`, { method, headers: { apikey: cfg.key, authorization: `Bearer ${cfg.key}`, ...(body ? { 'content-type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined });
+  let res;
+  try { res = await fetch(`${cfg.url}${path}`, { method, headers: { apikey: cfg.key, authorization: `Bearer ${cfg.key}`, ...(body ? { 'content-type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined }); }
+  catch (err) { return { ok: false, status: 0, data: { message: String(err && err.message) } }; }   // the address does not answer: SUPABASE_URL is wrong
   let data = null; try { data = await res.json(); } catch (_) { /* some answers have no body */ }
   return { ok: res.ok, status: res.status, data };
 }
+/** Why storage said no, in one word the page can explain: the address, the key, or something else. Never the key itself. */
+function sbWhy(r) {
+  const text = JSON.stringify(r.data || '');
+  if (r.status === 0 || r.status === 404 && !/bucket|object/i.test(text)) return 'url';
+  if (r.status === 401 || r.status === 403 || /jws|jwt|unauthor|signature|api.?key|row-level security|permission/i.test(text)) return 'key';
+  if (r.status === 402 || /paused|quota|exceed/i.test(text)) return 'paused';
+  return 'other';
+}
+let sbLast = null;
 /** Makes the bucket the first time: private, PDF only, 50 MB at most. A bucket that already exists is what we want, too. */
 async function ebookBucket(cfg) {
   if (ebookBucketReady) return true;
   const r = await sb(cfg, 'POST', '/bucket', { id: EBOOK_BUCKET, name: EBOOK_BUCKET, public: false, file_size_limit: EBOOK_MB * 1024 * 1024, allowed_mime_types: ['application/pdf'] });
   if (r.ok || r.status === 409 || (r.status === 400 && /exist/i.test(JSON.stringify(r.data)))) return (ebookBucketReady = true);
-  console.error('e-book bucket could not be made:', r.status, JSON.stringify(r.data));
+  console.error('e-book bucket could not be made:', r.status, JSON.stringify(r.data)); sbLast = r;
   return false;
 }
 async function ebook(req, url, s) {
@@ -2306,11 +2317,11 @@ async function ebook(req, url, s) {
     let body = null; try { body = await req.json(); } catch (_) { /* not JSON */ }
     const size = Number(body && body.size);
     if (!Number.isFinite(size) || size < 100 || size > EBOOK_MB * 1024 * 1024) return json({ error: 'size', max: EBOOK_MB }, 400);
-    if (!(await ebookBucket(cfg))) return json({ error: 'storage' }, 502);
+    if (!(await ebookBucket(cfg))) return json({ error: 'storage', step: 'bucket', why: sbWhy(sbLast || { status: 0 }), code: (sbLast || {}).status || 0 }, 502);
     const v = Date.now().toString(36) + randomBytes(2).toString('hex');
     const r = await sb(cfg, 'POST', `/object/upload/sign/${EBOOK_BUCKET}/${ebookPath(id, v)}`, {});
     const link = r.ok && r.data && r.data.url;
-    if (!link) { console.error('e-book upload link failed:', r.status, JSON.stringify(r.data)); return json({ error: 'storage' }, 502); }
+    if (!link) { console.error('e-book upload link failed:', r.status, JSON.stringify(r.data)); return json({ error: 'storage', step: 'link', why: sbWhy(r), code: r.status }, 502); }
     const key = env('SUPABASE_PUBLISHABLE_KEY').trim();   // optional: a publishable key is meant to be public
     return json({ v, upload: ebookUrl(cfg, link), ...(key ? { key } : {}) });
   }
@@ -2335,7 +2346,7 @@ async function audioBucket(cfg) {
   if (audioBucketReady) return true;
   const r = await sb(cfg, 'POST', '/bucket', { id: AUDIO_BUCKET, name: AUDIO_BUCKET, public: false, file_size_limit: AUDIO_MB * 1024 * 1024, allowed_mime_types: AUDIO_TYPES });
   if (r.ok || r.status === 409 || (r.status === 400 && /exist/i.test(JSON.stringify(r.data)))) return (audioBucketReady = true);
-  console.error('audiobook bucket could not be made:', r.status, JSON.stringify(r.data));
+  console.error('audiobook bucket could not be made:', r.status, JSON.stringify(r.data)); sbLast = r;
   return false;
 }
 async function audio(req, url, s) {
@@ -2360,11 +2371,11 @@ async function audio(req, url, s) {
     let body = null; try { body = await req.json(); } catch (_) { /* not JSON */ }
     const size = Number(body && body.size);
     if (!Number.isFinite(size) || size < 1000 || size > AUDIO_MB * 1024 * 1024) return json({ error: 'size', max: AUDIO_MB }, 400);
-    if (!(await audioBucket(cfg))) return json({ error: 'storage' }, 502);
+    if (!(await audioBucket(cfg))) return json({ error: 'storage', step: 'bucket', why: sbWhy(sbLast || { status: 0 }), code: (sbLast || {}).status || 0 }, 502);
     const v = Date.now().toString(36) + randomBytes(2).toString('hex');
     const r = await sb(cfg, 'POST', `/object/upload/sign/${AUDIO_BUCKET}/${audioPath(id, v)}`, {});
     const link = r.ok && r.data && r.data.url;
-    if (!link) { console.error('audiobook upload link failed:', r.status, JSON.stringify(r.data)); return json({ error: 'storage' }, 502); }
+    if (!link) { console.error('audiobook upload link failed:', r.status, JSON.stringify(r.data)); return json({ error: 'storage', step: 'link', why: sbWhy(r), code: r.status }, 502); }
     const key = env('SUPABASE_PUBLISHABLE_KEY').trim();
     return json({ v, upload: ebookUrl(cfg, link), ...(key ? { key } : {}) });
   }
